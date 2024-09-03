@@ -1,0 +1,22 @@
+meta {
+  name: Get Access Token (Local)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: none
+}
+
+headers {
+  Content-Type: application/x-www-form-urlencoded
+}
+
+body:form-urlencoded {
+  grant_type: client_credentials
+  client_id: {{oauth.client-id}}
+  client_secret: {{oauth.client-secret}}
+  scope: read write
+}
