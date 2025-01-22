@@ -11,3 +11,10 @@ The OAuth 2.1 Authorization Framework ([proposal](https://datatracker.ietf.org/d
 - Authorization Code grant now utilizes PKCE (Proof-of-Key-Code-Exchange, [RFC7636](https://datatracker.ietf.org/doc/html/rfc7636), pronounced pixie) by default.
 - Bearer tokens should not be sent as a URL query parameter.
 - Refresh tokens must be single use unless otherwise tied to the sender. This application will issue single-use refresh tokens.
+
+## Wishlist
+- [ ] OAuth Server
+- [ ] Login Page
+- [ ] Custom themes for login page by client_id parameter
+- [ ] Portal to create / manage clients & scopes
+- [ ] Support for public clients (no secrets)
