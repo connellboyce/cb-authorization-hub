@@ -27,6 +27,12 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
@@ -60,11 +66,15 @@ public class WebSecurityConfig {
 
 	@Bean
 	@Order(2)
-	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
-			throws Exception {
-		http.authorizeHttpRequests((authorize) -> authorize
-						.anyRequest().authenticated())
-				.formLogin((form) -> form.loginPage("/pages/login.html").permitAll());
+	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+				.authorizeHttpRequests(authorizeRequests ->
+						authorizeRequests
+								.requestMatchers("/oauth2/token", "/oauth2/authorize").authenticated()
+								.anyRequest().permitAll()
+				)
+				.formLogin(Customizer.withDefaults())
+				.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
 
 		return http.build();
 	}
@@ -73,7 +83,7 @@ public class WebSecurityConfig {
 	public RegisteredClientRepository registeredClientRepository() {
 		RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
 				.clientId("client")
-				.clientSecret("{noop}secret")
+				.clientSecret(passwordEncoder().encode("secret"))
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
@@ -85,6 +95,21 @@ public class WebSecurityConfig {
 				.build();
 
 		return new InMemoryRegisteredClientRepository(registeredClient);
+	}
+
+	@Bean
+	public UserDetailsService userDetailsService() {
+		UserDetails user = User.withUsername("admin")
+				.password(passwordEncoder().encode("admin123"))  // Encode password
+				.roles("USER")  // Assign roles
+				.build();
+
+		return new InMemoryUserDetailsManager(user);
+	}
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 
 	@Bean

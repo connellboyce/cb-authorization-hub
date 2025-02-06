@@ -1,5 +1,5 @@
 meta {
-  name: Get Access Token (Local)
+  name: Exchange Code
   type: http
   seq: 2
 }
@@ -10,13 +10,10 @@ post {
   auth: none
 }
 
-headers {
-  Content-Type: application/x-www-form-urlencoded
-}
-
 body:form-urlencoded {
-  grant_type: client_credentials
+  grant_type: authorization_code
+  redirect_uri: http://localhost:2121/path/to/redirect/to
+  code: {{oauth.authorization-code}}
   client_id: {{oauth.client-id}}
   client_secret: {{oauth.client-secret}}
-  ~scope: read write
 }
