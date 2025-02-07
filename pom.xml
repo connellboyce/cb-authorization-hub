@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.connellboyce</groupId>
-    <artifactId>oauth</artifactId>
+    <artifactId>authhub</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>CB-OAuth</name>
-    <description>OAuth 2.1 implementation for ConnellBoyce.com API authorization.</description>
+    <name>CB Authorization Hub</name>
+    <description>Login and OAuth 2.1 implementation for ConnellBoyce.com APIs.</description>
     <url/>
     <licenses>
         <license/>

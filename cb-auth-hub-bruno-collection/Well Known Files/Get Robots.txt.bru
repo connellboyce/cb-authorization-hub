@@ -1,0 +1,11 @@
+meta {
+  name: Get Robots.txt
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{oauth.base-url}}/.well_known/robots.txt
+  body: none
+  auth: none
+}
