@@ -1,4 +1,4 @@
-package com.connellboyce.oauth.controller;
+package com.connellboyce.authhub.controller;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

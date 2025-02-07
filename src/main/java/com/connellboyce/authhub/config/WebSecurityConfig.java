@@ -1,4 +1,4 @@
-package com.connellboyce.oauth.config;
+package com.connellboyce.authhub.config;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -40,7 +40,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.UUID;
 
-import static com.connellboyce.oauth.util.RsaUtils.generateRsaKey;
+import static com.connellboyce.authhub.util.RsaUtils.generateRsaKey;
 
 @Configuration
 public class WebSecurityConfig {

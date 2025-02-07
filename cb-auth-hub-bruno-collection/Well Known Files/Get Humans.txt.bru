@@ -1,0 +1,11 @@
+meta {
+  name: Get Humans.txt
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{oauth.base-url}}/.well_known/humans.txt
+  body: none
+  auth: none
+}

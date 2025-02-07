@@ -1,4 +1,4 @@
-package com.connellboyce.oauth.util;
+package com.connellboyce.authhub.util;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

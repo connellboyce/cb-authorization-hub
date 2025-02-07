@@ -1,13 +1,13 @@
-package com.connellboyce.oauth;
+package com.connellboyce.authhub;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class OAuthApplication {
+public class AuthHubApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(OAuthApplication.class, args);
+		SpringApplication.run(AuthHubApplication.class, args);
 	}
 
 }
