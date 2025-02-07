@@ -29,15 +29,18 @@ jobs:
 
       - name: Check code coverage threshold
         run: |
-          COVERAGE=$(grep -oP '(?<=<counter type="LINE" missed="\d+" covered=")\d+' target/site/jacoco/jacoco.xml)
-          TOTAL=$(grep -oP '(?<=<counter type="LINE" missed=")\d+(?=" covered="\d+")' target/site/jacoco/jacoco.xml)
+          COVERAGE=$(awk -F 'covered="' '/<counter type="LINE"/ {print $2}' target/site/jacoco/jacoco.xml | awk -F '"' '{print $1}')
+          TOTAL=$(awk -F 'missed="' '/<counter type="LINE"/ {print $2}' target/site/jacoco/jacoco.xml | awk -F '"' '{print $1}')
+          
           if [ -z "$COVERAGE" ] || [ -z "$TOTAL" ]; then
-            echo "Failed to parse JaCoCo report"
-            exit 1
+          echo "Failed to parse JaCoCo report"
+          exit 1
           fi
+          
           PERCENT=$(echo "scale=2; $COVERAGE / ($COVERAGE + $TOTAL) * 100" | bc)
           echo "Code coverage is $PERCENT%"
+          
           if (( $(echo "$PERCENT < 80" | bc -l) )); then
-            echo "Code coverage ($PERCENT%) is below required threshold (80%)"
-            exit 1
+          echo "Code coverage ($PERCENT%) is below required threshold (80%)"
+          exit 1
           fi
