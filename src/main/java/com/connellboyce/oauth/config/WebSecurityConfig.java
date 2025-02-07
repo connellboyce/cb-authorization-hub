@@ -1,4 +1,4 @@
-package com.connellboyce.oauth.server.security.config;
+package com.connellboyce.oauth.config;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -40,7 +40,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.UUID;
 
-import static com.connellboyce.oauth.server.security.util.RsaUtils.generateRsaKey;
+import static com.connellboyce.oauth.util.RsaUtils.generateRsaKey;
 
 @Configuration
 public class WebSecurityConfig {
@@ -71,6 +71,8 @@ public class WebSecurityConfig {
 				.authorizeHttpRequests(authorizeRequests ->
 						authorizeRequests
 								.requestMatchers("/oauth2/token", "/oauth2/authorize").authenticated()
+								.requestMatchers("/robots.txt").permitAll()
+								.requestMatchers("/humans.txt").permitAll()
 								.anyRequest().permitAll()
 				)
 				.formLogin(Customizer.withDefaults())
