@@ -1,0 +1,46 @@
+name: Code Coverage Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build and run tests with JaCoCo
+        run: mvn verify
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
+      - name: Check code coverage threshold
+        run: |
+          COVERAGE=$(awk -F 'covered="' '/<counter type="LINE"/ {print $2}' target/site/jacoco/jacoco.xml | awk -F '"' '{print $1}')
+          TOTAL=$(awk -F 'missed="' '/<counter type="LINE"/ {print $2}' target/site/jacoco/jacoco.xml | awk -F '"' '{print $1}')
+          
+          if [ -z "$COVERAGE" ] || [ -z "$TOTAL" ]; then
+          echo "Failed to parse JaCoCo report"
+          exit 1
+          fi
+          
+          PERCENT=$(echo "scale=2; $COVERAGE / ($COVERAGE + $TOTAL) * 100" | bc)
+          echo "Code coverage is $PERCENT%"
+          
+          if (( $(echo "$PERCENT < 80" | bc -l) )); then
+          echo "Code coverage ($PERCENT%) is below required threshold (80%)"
+          exit 1
+          fi
