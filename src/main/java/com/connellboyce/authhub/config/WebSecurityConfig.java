@@ -1,5 +1,6 @@
 package com.connellboyce.authhub.config;
 
+import com.connellboyce.authhub.filter.CBAuthenticationFilter;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -9,6 +10,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,7 +34,13 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.context.DelegatingSecurityContextRepository;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -40,7 +52,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.connellboyce.authhub.util.RsaUtils.generateRsaKey;
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class WebSecurityConfig {
@@ -49,11 +60,20 @@ public class WebSecurityConfig {
 	@Order(1)
 	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-
+		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+				.oidc(Customizer.withDefaults());
 		http
-				.csrf(csrf -> csrf.ignoringRequestMatchers("/oauth2/**"))
-				.exceptionHandling(exceptions ->
-						exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
+				.exceptionHandling((exceptions) ->
+						exceptions.defaultAuthenticationEntryPointFor(
+								new LoginUrlAuthenticationEntryPoint("/login"),
+								new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+						)
+				)
+				.oauth2ResourceServer(resourceServer ->
+						resourceServer.jwt(Customizer.withDefaults())
+				)
+				.csrf(csrf -> csrf
+						.csrfTokenRepository(sessionCsrfTokenRepository())
 				);
 
 		return http.build();
@@ -61,22 +81,40 @@ public class WebSecurityConfig {
 
 	@Bean
 	@Order(2)
-	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, AuthenticationConfiguration authenticationConfiguration) throws Exception {
 		http
+				.addFilter(filter(authenticationConfiguration))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/.well_known/*", "/robots.txt", "/humans.txt").permitAll()
 						.requestMatchers("/login").permitAll()
 						.anyRequest().authenticated()
 				)
-				.formLogin(withDefaults())
-				.logout(logout ->
-						logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-								.logoutSuccessUrl("/")
-								.invalidateHttpSession(true)
-								.deleteCookies("JSESSIONID")
-				);
+				.authenticationProvider(authProvider());
 
 		return http.build();
+	}
+
+	@Bean
+	public CsrfTokenRepository sessionCsrfTokenRepository() {
+		HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
+		repository.setSessionAttributeName("_csrf");
+		return repository;
+	}
+
+	private CBAuthenticationFilter filter(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+		CBAuthenticationFilter filter = new CBAuthenticationFilter(authenticationConfiguration.getAuthenticationManager());
+		filter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler("/login?error"));
+		filter.setSecurityContextRepository(new DelegatingSecurityContextRepository(
+				new RequestAttributeSecurityContextRepository(),
+				new HttpSessionSecurityContextRepository()
+		));
+		return filter;
+	}
+
+	private AuthenticationProvider authProvider() {
+		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+		authProvider.setUserDetailsService(userDetailsService());
+		return authProvider;
 	}
 
 	@Bean
@@ -133,37 +171,6 @@ public class WebSecurityConfig {
 	@Bean
 	public AuthorizationServerSettings authorizationServerSettings() {
 		return AuthorizationServerSettings.builder().build();
-	}
-
-
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedMethods(List.of(
-				HttpMethod.GET.name(),
-				HttpMethod.PUT.name(),
-				HttpMethod.POST.name(),
-				HttpMethod.DELETE.name(),
-				HttpMethod.OPTIONS.name(),
-				HttpMethod.PATCH.name()));
-
-		configuration.setAllowedHeaders(List.of("Content-Type, api_key, " +
-				"X-Requested-With, " +
-				"Authorization, " +
-				"DNT,X-CustomHeader," +
-				"Keep-Alive,User-Agent," +
-				"X-Requested-With," +
-				"If-Modified-Since," +
-				"Cache-Control," +
-				"Content-Type," +
-				"Content-Range,Range"));
-
-		configuration.setAllowedOrigins(List.of("*"));
-		configuration.setAllowCredentials(true);
-		configuration.addExposedHeader("Authorization");
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration.applyPermitDefaultValues());
-
-		return source;
 	}
 
 }
