@@ -9,7 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -29,6 +31,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -44,39 +47,53 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class WebSecurityConfig {
-	
+
 	@Bean
 	@Order(1)
-	public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
+			throws Exception {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-
+		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+				.oidc(withDefaults());
 		http
-				.csrf(csrf -> csrf.ignoringRequestMatchers("/oauth2/**"))
-				.exceptionHandling(exceptions ->
-						exceptions.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login"))
-				);
+				.exceptionHandling((exceptions) -> exceptions
+						.defaultAuthenticationEntryPointFor(
+								new LoginUrlAuthenticationEntryPoint("/login"),
+								new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+						)
+				)
+				.oauth2ResourceServer((resourceServer) -> resourceServer
+						.jwt(withDefaults()));
 
 		return http.build();
 	}
 
 	@Bean
 	@Order(2)
-	public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+			throws Exception {
 		http
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/.well_known/*", "/robots.txt", "/humans.txt").permitAll()
-						.requestMatchers("/login").permitAll()
-						.anyRequest().authenticated()
-				)
-				.formLogin(withDefaults())
-				.logout(logout ->
-						logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-								.logoutSuccessUrl("/")
-								.invalidateHttpSession(true)
-								.deleteCookies("JSESSIONID")
+				.authorizeHttpRequests((authorize) -> authorize
+						.requestMatchers("/error").permitAll()
+						.anyRequest().authenticated())
+				.formLogin(formLogin -> formLogin
+						.loginPage("/login")
+						.permitAll()
 				);
-
 		return http.build();
+	}
+
+	@Bean
+	WebSecurityCustomizer webSecurityCustomizer() {
+		return (web) -> web.debug(false)
+				.ignoring()
+				.requestMatchers(
+						"/webjars/**",
+						"/images/**", "/css/**",
+						"/assets/**",
+						"/favicon.ico",
+						"/.well_known/**"
+				);
 	}
 
 	@Bean
