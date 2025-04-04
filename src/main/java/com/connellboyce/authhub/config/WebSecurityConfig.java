@@ -1,5 +1,7 @@
 package com.connellboyce.authhub.config;
 
+import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
+import com.connellboyce.authhub.repository.MongoRegisteredClientService;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -17,16 +19,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -96,22 +93,8 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	public RegisteredClientRepository registeredClientRepository() {
-		RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
-				.clientId("client")
-				.clientSecret(passwordEncoder().encode("secret"))
-				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-				.redirectUri("http://localhost:2121/path/to/redirect/to")
-				.scope("read")
-				.scope("write")
-				.scope("urn:connellboyce:scope:gaa-api#read")
-				.clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
-				.build();
-
-		return new InMemoryRegisteredClientRepository(registeredClient);
+	public RegisteredClientRepository registeredClientRepository(MongoRegisteredClientRepository repository, PasswordEncoder passwordEncoder) {
+		return new MongoRegisteredClientService(repository, passwordEncoder);
 	}
 
 	@Bean
