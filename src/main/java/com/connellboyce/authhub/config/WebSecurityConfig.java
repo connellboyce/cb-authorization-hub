@@ -85,10 +85,12 @@ public class WebSecurityConfig {
 				.ignoring()
 				.requestMatchers(
 						"/webjars/**",
-						"/images/**", "/css/**",
+						"/images/**",
+						"/css/**",
 						"/assets/**",
 						"/favicon.ico",
-						"/.well_known/**"
+						"/.well_known/**",
+						"/actuator/**"
 				);
 	}
 
