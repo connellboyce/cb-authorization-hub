@@ -11,12 +11,12 @@ import org.springframework.security.oauth2.server.authorization.settings.ClientS
 
 import java.util.stream.Collectors;
 
-public class MongoRegisteredClientService implements RegisteredClientRepository {
+public class RegisteredClientRepositoryImpl implements RegisteredClientRepository {
 
 	private final MongoRegisteredClientRepository repository;
 	private final PasswordEncoder passwordEncoder;
 
-	public MongoRegisteredClientService(MongoRegisteredClientRepository repository, PasswordEncoder passwordEncoder) {
+	public RegisteredClientRepositoryImpl(MongoRegisteredClientRepository repository, PasswordEncoder passwordEncoder) {
 		this.repository = repository;
 		this.passwordEncoder = passwordEncoder;
 	}
@@ -47,7 +47,6 @@ public class MongoRegisteredClientService implements RegisteredClientRepository 
 
 	@Override
 	public RegisteredClient findByClientId(String clientId) {
-		System.out.printf("Finding client by clientId: %s%n", clientId);
 		return repository.findByClientId(clientId).map(this::toRegisteredClient).orElse(null);
 	}
 

@@ -1,7 +1,7 @@
 package com.connellboyce.authhub.config;
 
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
-import com.connellboyce.authhub.repository.MongoRegisteredClientService;
+import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -78,7 +78,9 @@ public class WebSecurityConfig {
 		http
 				.authorizeHttpRequests((authorize) -> authorize
 						.requestMatchers("/error").permitAll()
+						.requestMatchers("/api/v1/**").authenticated()
 						.anyRequest().authenticated())
+				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
 				.formLogin(formLogin -> formLogin
 						.loginPage("/login")
 						.permitAll()
@@ -103,7 +105,7 @@ public class WebSecurityConfig {
 
 	@Bean
 	public RegisteredClientRepository registeredClientRepository(MongoRegisteredClientRepository repository, PasswordEncoder passwordEncoder) {
-		return new MongoRegisteredClientService(repository, passwordEncoder);
+		return new RegisteredClientRepositoryImpl(repository, passwordEncoder);
 	}
 
 	@Bean
