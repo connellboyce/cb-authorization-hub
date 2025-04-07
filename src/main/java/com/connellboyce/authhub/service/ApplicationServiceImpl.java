@@ -1,6 +1,6 @@
 package com.connellboyce.authhub.service;
 
-import com.connellboyce.authhub.dao.Application;
+import com.connellboyce.authhub.model.dao.Application;
 import com.connellboyce.authhub.repository.ApplicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

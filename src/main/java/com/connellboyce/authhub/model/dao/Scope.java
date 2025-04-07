@@ -1,4 +1,4 @@
-package com.connellboyce.authhub.dao;
+package com.connellboyce.authhub.model.dao;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,11 +7,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @AllArgsConstructor
-@Document(collection = "applications")
-public class Application {
+@Document(collection = "scopes")
+public class Scope {
 	@Id
 	private String id;
 	private String name;
-	private String description;
-	private String ownerId;
+	private String applicationId;
 }

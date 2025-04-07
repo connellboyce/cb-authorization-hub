@@ -1,7 +1,7 @@
 package com.connellboyce.authhub.controller;
 
-import com.connellboyce.authhub.dao.Application;
-import com.connellboyce.authhub.payload.request.CreateApplicationRequest;
+import com.connellboyce.authhub.model.dao.Application;
+import com.connellboyce.authhub.model.payload.request.CreateApplicationRequest;
 import com.connellboyce.authhub.service.ApplicationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

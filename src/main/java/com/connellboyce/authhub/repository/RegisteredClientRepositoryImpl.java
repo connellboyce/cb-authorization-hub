@@ -1,6 +1,6 @@
 package com.connellboyce.authhub.repository;
 
-import com.connellboyce.authhub.dao.MongoRegisteredClient;
+import com.connellboyce.authhub.model.dao.MongoRegisteredClient;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;

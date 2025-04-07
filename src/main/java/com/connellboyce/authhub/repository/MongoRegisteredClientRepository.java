@@ -1,6 +1,6 @@
 package com.connellboyce.authhub.repository;
 
-import com.connellboyce.authhub.dao.MongoRegisteredClient;
+import com.connellboyce.authhub.model.dao.MongoRegisteredClient;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;

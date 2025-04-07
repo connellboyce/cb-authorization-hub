@@ -1,4 +1,4 @@
-package com.connellboyce.authhub.dao;
+package com.connellboyce.authhub.model.dao;
 
 import lombok.Getter;
 import lombok.Setter;
