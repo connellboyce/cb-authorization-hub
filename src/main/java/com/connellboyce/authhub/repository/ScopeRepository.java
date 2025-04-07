@@ -1,6 +1,6 @@
 package com.connellboyce.authhub.repository;
 
-import com.connellboyce.authhub.dao.Scope;
+import com.connellboyce.authhub.model.dao.Scope;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.connellboyce.authhub.payload.request;
+package com.connellboyce.authhub.model.payload.request;
 
 import lombok.Data;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;

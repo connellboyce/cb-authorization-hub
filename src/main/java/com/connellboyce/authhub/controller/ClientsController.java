@@ -1,6 +1,6 @@
 package com.connellboyce.authhub.controller;
 
-import com.connellboyce.authhub.payload.request.CreateClientRequest;
+import com.connellboyce.authhub.model.payload.request.CreateClientRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
