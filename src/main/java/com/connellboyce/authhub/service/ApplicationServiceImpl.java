@@ -18,7 +18,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 		if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
 			return null;
 		}
-		if (applicationRepository.findByName(name).isEmpty()) {
+		if (applicationRepository.findByName(name).isPresent()) {
 			return null;
 		}
 		return applicationRepository.save(new Application(String.valueOf(UUID.randomUUID()), name, description, null));
