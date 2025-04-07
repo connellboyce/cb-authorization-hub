@@ -1,0 +1,22 @@
+meta {
+  name: Create Application
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/api/v1/application
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJraWQiOiIyZDJhNDcyYy0yNzIyLTQ3YTMtOTc3YS1hZTEzM2VkMTEzYjciLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJjbGllbnQiLCJhdWQiOiJjbGllbnQiLCJuYmYiOjE3NDM5OTIxNzgsInJvbGUiOltdLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjIxMjEiLCJleHAiOjE3NDM5OTI0NzgsImlhdCI6MTc0Mzk5MjE3OCwianRpIjoiNTI4ODAyZjgtOGIzNC00ZWYxLTg2MjQtNGFjMmFkNzFkMzczIn0.Fpr-qweWkymXI-r0psKBL9akB0y0EQAM7TcwwzFAt78VmOFbiv27EQqHmh3MTwBHyjjSn1CiXBVWL9Ke7VUOBd5aVay_YPI1h3ZKiG0wR-lZa4v_niOVTrDEHpRcnJUM1yo7s_4TAhER32w9PMkeYNsva1-UQN4PWnvid0QuzHJNFs0F7nm4V0qwA_9Pw35o4a-Vb0H0kpKwFUx3nsYSGxO87c6zOcRIUNSfGw_oxnMIqM5AK_u51z7yvppxnOhbrBibhcLHlczPS51FHvdJgkCdBrWLq_47TZ9duXJK7fFL9szRvD7l-zadtyWl7-iz14Uh0VR7ZDiTKgcIPt9vOA
+}
+
+body:json {
+  {
+    "name": "GAA API",
+    "description": "Service to provide programmatic access to GAA fixtures and results."
+  }
+}

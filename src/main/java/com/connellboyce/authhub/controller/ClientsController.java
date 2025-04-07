@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/client")
-public class ClientController {
-	private final Logger LOGGER = LoggerFactory.getLogger(ClientController.class);
+public class ClientsController {
+	private final Logger LOGGER = LoggerFactory.getLogger(ClientsController.class);
 
 	@Autowired
 	RegisteredClientRepository registeredClientRepository;
