@@ -1,0 +1,18 @@
+meta {
+  name: Create Scope
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/api/v1/scope
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "urn:connellboyce:scope:auth-hub#createScope",
+    "applicationId": ""
+  }
+}
