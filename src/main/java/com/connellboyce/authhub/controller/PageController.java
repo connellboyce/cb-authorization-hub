@@ -9,4 +9,14 @@ public class PageController {
 	public String login() {
 		return "login";
 	}
+
+	@GetMapping("/register")
+	public String register() {
+		return "register";
+	}
+
+	@GetMapping("/portal/index")
+	public String portalHomePage() {
+		return "portal/index";
+	}
 }

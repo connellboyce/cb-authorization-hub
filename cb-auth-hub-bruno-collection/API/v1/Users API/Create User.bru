@@ -6,6 +6,10 @@ meta {
 
 post {
   url: {{oauth.base-url}}/api/v1/user
-  body: none
+  body: json
   auth: none
+}
+
+body:json {
+  {"username":"test-user5","password":"test-pass","email":"testcbuser5@mailinator.com","firstName":"test","lastName":"user"}
 }
