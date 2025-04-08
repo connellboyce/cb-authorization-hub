@@ -24,6 +24,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 			throw new UsernameNotFoundException("User not found");
 		}
 
-		return new User(foundUser.getUsername(), foundUser.getPassword(), foundUser.getRoles().stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+		return new User(foundUser.getUsername(), foundUser.getPassword(), foundUser.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).collect(Collectors.toList()));
 	}
 }

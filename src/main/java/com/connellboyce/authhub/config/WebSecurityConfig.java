@@ -76,7 +76,10 @@ public class WebSecurityConfig {
 		http
 				.authorizeHttpRequests((authorize) -> authorize
 						.requestMatchers("/error").permitAll()
-						.requestMatchers("/api/v1/**").authenticated()
+						.requestMatchers("/api/v1/user").permitAll()
+						.requestMatchers("/register").permitAll()
+						.requestMatchers("/portal/**").hasRole("DEVELOPER")
+						.requestMatchers("/portal").hasRole("DEVELOPER")
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
 				.userDetailsService(userDetailsService)
@@ -98,7 +101,8 @@ public class WebSecurityConfig {
 						"/assets/**",
 						"/favicon.ico",
 						"/.well_known/**",
-						"/actuator/**"
+						"/actuator/**",
+						"/api/v1/user"
 				);
 	}
 
@@ -138,37 +142,6 @@ public class WebSecurityConfig {
 	@Bean
 	public AuthorizationServerSettings authorizationServerSettings() {
 		return AuthorizationServerSettings.builder().build();
-	}
-
-
-	public CorsConfigurationSource corsConfigurationSource() {
-		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedMethods(List.of(
-				HttpMethod.GET.name(),
-				HttpMethod.PUT.name(),
-				HttpMethod.POST.name(),
-				HttpMethod.DELETE.name(),
-				HttpMethod.OPTIONS.name(),
-				HttpMethod.PATCH.name()));
-
-		configuration.setAllowedHeaders(List.of("Content-Type, api_key, " +
-				"X-Requested-With, " +
-				"Authorization, " +
-				"DNT,X-CustomHeader," +
-				"Keep-Alive,User-Agent," +
-				"X-Requested-With," +
-				"If-Modified-Since," +
-				"Cache-Control," +
-				"Content-Type," +
-				"Content-Range,Range"));
-
-		configuration.setAllowedOrigins(List.of("*"));
-		configuration.setAllowCredentials(true);
-		configuration.addExposedHeader("Authorization");
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration.applyPermitDefaultValues());
-
-		return source;
 	}
 
 	@Bean
