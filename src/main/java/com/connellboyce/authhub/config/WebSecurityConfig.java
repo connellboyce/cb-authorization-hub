@@ -2,6 +2,7 @@ package com.connellboyce.authhub.config;
 
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
+import com.connellboyce.authhub.service.UserDetailsServiceImpl;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -16,8 +17,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,7 +28,6 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -73,7 +71,7 @@ public class WebSecurityConfig {
 
 	@Bean
 	@Order(2)
-	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
 			throws Exception {
 		http
 				.authorizeHttpRequests((authorize) -> authorize
@@ -81,6 +79,7 @@ public class WebSecurityConfig {
 						.requestMatchers("/api/v1/**").authenticated()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+				.userDetailsService(userDetailsService)
 				.formLogin(formLogin -> formLogin
 						.loginPage("/login")
 						.permitAll()
@@ -104,18 +103,13 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	public RegisteredClientRepository registeredClientRepository(MongoRegisteredClientRepository repository, PasswordEncoder passwordEncoder) {
-		return new RegisteredClientRepositoryImpl(repository, passwordEncoder);
+	public RegisteredClientRepository registeredClientRepository(MongoRegisteredClientRepository repository) {
+		return new RegisteredClientRepositoryImpl(repository);
 	}
 
 	@Bean
-	public UserDetailsService userDetailsService() {
-		UserDetails user = User.withUsername("admin")
-				.password(passwordEncoder().encode("admin123"))  // Encode password
-				.roles("USER")  // Assign roles
-				.build();
-
-		return new InMemoryUserDetailsManager(user);
+	public UserDetailsService userDetailsService(UserDetailsServiceImpl userDetailsService) {
+		return userDetailsService;
 	}
 
 	@Bean

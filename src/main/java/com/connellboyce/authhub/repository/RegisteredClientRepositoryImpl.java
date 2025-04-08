@@ -13,30 +13,14 @@ import java.util.stream.Collectors;
 public class RegisteredClientRepositoryImpl implements RegisteredClientRepository {
 
 	private final MongoRegisteredClientRepository repository;
-	private final PasswordEncoder passwordEncoder;
 
-	public RegisteredClientRepositoryImpl(MongoRegisteredClientRepository repository, PasswordEncoder passwordEncoder) {
+	public RegisteredClientRepositoryImpl(MongoRegisteredClientRepository repository) {
 		this.repository = repository;
-		this.passwordEncoder = passwordEncoder;
 	}
 
 	@Override
 	public void save(RegisteredClient registeredClient) {
-		MongoRegisteredClient mongoClient = new MongoRegisteredClient();
-		mongoClient.setId(registeredClient.getId());
-		mongoClient.setClientId(registeredClient.getClientId());
-		mongoClient.setClientSecret(passwordEncoder.encode(registeredClient.getClientSecret()));
-		mongoClient.setClientAuthenticationMethods(
-				registeredClient.getClientAuthenticationMethods().stream().map(ClientAuthenticationMethod::getValue).collect(Collectors.toSet())
-		);
-		mongoClient.setAuthorizationGrantTypes(
-				registeredClient.getAuthorizationGrantTypes().stream().map(AuthorizationGrantType::getValue).collect(Collectors.toSet())
-		);
-		mongoClient.setRedirectUris(registeredClient.getRedirectUris());
-		mongoClient.setScopes(registeredClient.getScopes());
-		mongoClient.setRequireAuthorizationConsent(registeredClient.getClientSettings().isRequireAuthorizationConsent());
-
-		repository.save(mongoClient);
+		throw new UnsupportedOperationException("This save method is not supported, as it does not allow for owner ID to be passed into the method. Please use ClientService.createClient() instead.");
 	}
 
 	@Override
