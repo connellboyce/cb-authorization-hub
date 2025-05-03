@@ -30,6 +30,7 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.web.filter.HiddenHttpMethodFilter;
 
 import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
@@ -150,4 +151,8 @@ public class WebSecurityConfig {
 		};
 	}
 
+	@Bean
+	public HiddenHttpMethodFilter hiddenHttpMethodFilter() {
+		return new HiddenHttpMethodFilter();
+	}
 }

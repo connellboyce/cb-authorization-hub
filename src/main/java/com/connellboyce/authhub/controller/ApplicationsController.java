@@ -1,24 +1,20 @@
 package com.connellboyce.authhub.controller;
 
 import com.connellboyce.authhub.model.dao.Application;
-import com.connellboyce.authhub.model.payload.request.CreateApplicationRequest;
 import com.connellboyce.authhub.service.ApplicationService;
 import com.connellboyce.authhub.service.AuthUtilService;
-import com.connellboyce.authhub.service.UserService;
+import com.connellboyce.authhub.service.ScopeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
 
-@RestController
-@RequestMapping("/api/v1/application")
+@Controller
+@RequestMapping("/portal/operation/application")
 public class ApplicationsController {
 	@Autowired
 	private ApplicationService applicationService;
@@ -27,17 +23,44 @@ public class ApplicationsController {
 	private AuthUtilService authUtilService;
 
 	@PostMapping
-	public ResponseEntity<?> createApplication(@RequestBody CreateApplicationRequest createApplicationRequest, Authentication authentication) {
+	public String createApplication(@RequestParam("applicationName") String name, @RequestParam("description") String description, Authentication authentication, RedirectAttributes redirectAttributes) {
 		Optional<String> userId = authUtilService.getUserIdFromAuthentication(authentication);
 		if (userId.isEmpty()) {
-			return ResponseEntity.status(401).body("User level authentication required");
+			redirectAttributes.addFlashAttribute("error", "User not authenticated");
+			return "redirect:/portal/applications";
 		}
 
-		Application result = applicationService.createApplication(
-				createApplicationRequest.getName(),
-				createApplicationRequest.getDescription(),
-				userId.get()
-		);
-		return result == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(result);
+		Application result = applicationService.createApplication(name, description, userId.get());
+		if (result != null) {
+			redirectAttributes.addFlashAttribute("success", "Application created successfully!");
+		} else {
+			redirectAttributes.addFlashAttribute("error", "Application creation failed");
+		}
+		return "redirect:/portal/applications";
+	}
+
+	@PutMapping
+	public String updateApplication(@RequestParam("id") String id, @RequestParam("applicationName") String name, @RequestParam("description") String description, Authentication authentication, RedirectAttributes redirectAttributes) {
+		Optional<String> userId = authUtilService.getUserIdFromAuthentication(authentication);
+		if (userId.isEmpty()) {
+			redirectAttributes.addFlashAttribute("error", "User not authenticated");
+			return "redirect:/portal/applications/" + id;
+		}
+
+		Application result = applicationService.updateApplication(id, name, description, userId.get());
+		if (result != null) {
+			redirectAttributes.addFlashAttribute("success", "Application updated successfully!");
+		} else {
+			redirectAttributes.addFlashAttribute("error", "Application update failed");
+		}
+		return "redirect:/portal/applications/" + id;
+	}
+
+	@DeleteMapping("/{id}")
+	@PreAuthorize("@applicationService.validateApplicationOwnership(authentication, #id)")
+	public String deleteApplication(@PathVariable("id") String id, Authentication authentication, RedirectAttributes redirectAttributes) {
+		applicationService.deleteApplicationById(id);
+		redirectAttributes.addFlashAttribute("success", "Application deleted successfully!");
+		return "redirect:/portal/applications";
 	}
 }

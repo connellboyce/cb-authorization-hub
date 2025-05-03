@@ -6,34 +6,38 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-<div class="px-8 pt-16 lg:px-16">
+<div class="pt-16 lg:px-16">
     <h2 class="text-white font-bold text-3xl lg:text-xl text-center">connell<span class="text-[#f9004d]">boyce</span>.com</h2>
     <h1 class="text-white font-bold text-5xl lg:text-3xl mb-4 text-center">developer<span class="text-[#f9004d]">hub</span></h1>
     <hr>
     <h1 class="text-white font-bold text-5xl my-4 text-center">hi, <span class="text-[#f9004d]">${</span><span th:text="${name}">name</span><span class="text-[#f9004d]">}</span></h1>
-    <div class="rounded-xl bg-neutral-900 p-8 mx-auto w-1/3 mt-8">
-        <p class="text-white text-lg font-bold pb-4">what would you like to do?</p>
-        <div class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4" >
-            <a href="/portal/client">view my clients</a>
-        </div>
-        <div class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4" >
-            <a href="/portal/applications">view my applications</a>
-        </div>
+    <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto lg:w-1/3 mt-8 mx-16">
+        <p class="text-white text-2xl lg:text-lg font-bold pb-4">what would you like to do?</p>
+        <a href="/portal/clients">
+            <div class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4" >
+                view my clients
+            </div>
+        </a>
+        <a href="/portal/applications">
+            <div class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4" >
+                view my applications
+            </div>
+        </a>
         <div class="mt-8">
             <a href="https://www.connellboyce.com/">
-                <div class="hover:bg-neutral-800 text-neutral-400 text-lg p-2">
+                <div class="hover:bg-neutral-800 text-neutral-400 text-2xl lg:text-lg p-2">
                     <svg class="inline w-4 h-4 mr-2 fill-current text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l82.7 0L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3l0 82.7c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160c0-17.7-14.3-32-32-32L320 0zM80 32C35.8 32 0 67.8 0 112L0 432c0 44.2 35.8 80 80 80l320 0c44.2 0 80-35.8 80-80l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 112c0 8.8-7.2 16-16 16L80 448c-8.8 0-16-7.2-16-16l0-320c0-8.8 7.2-16 16-16l112 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L80 32z"/></svg>
                     connellboyce.com
                 </div>
             </a>
             <a href="https://oauth.net/2/">
-                <div class="hover:bg-neutral-800 text-neutral-400 border-y border-neutral-700 text-lg p-2">
+                <div class="hover:bg-neutral-800 text-neutral-400 border-y border-neutral-700 text-2xl lg:text-lg p-2">
                     <svg class="inline w-4 h-4 mr-2 fill-current text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l82.7 0L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3l0 82.7c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160c0-17.7-14.3-32-32-32L320 0zM80 32C35.8 32 0 67.8 0 112L0 432c0 44.2 35.8 80 80 80l320 0c44.2 0 80-35.8 80-80l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 112c0 8.8-7.2 16-16 16L80 448c-8.8 0-16-7.2-16-16l0-320c0-8.8 7.2-16 16-16l112 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L80 32z"/></svg>
                     oauth documentation
                 </div>
             </a>
             <a href="https://github.com/connellboyce/cb-authorization-hub">
-                <div class="hover:bg-neutral-800 text-neutral-400 text-lg p-2">
+                <div class="hover:bg-neutral-800 text-neutral-400 text-2xl lg:text-lg p-2">
                     <svg class="inline w-4 h-4 mr-2 fill-current text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l82.7 0L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3l0 82.7c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160c0-17.7-14.3-32-32-32L320 0zM80 32C35.8 32 0 67.8 0 112L0 432c0 44.2 35.8 80 80 80l320 0c44.2 0 80-35.8 80-80l0-112c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 112c0 8.8-7.2 16-16 16L80 448c-8.8 0-16-7.2-16-16l0-320c0-8.8 7.2-16 16-16l112 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L80 32z"/></svg>
                     github repository
                 </div>

@@ -31,4 +31,12 @@ public class ScopeServiceImpl implements ScopeService {
 		}
 		return scopeRepository.save(new Scope(String.valueOf(UUID.randomUUID()), name, applicationId));
 	}
+
+	@Override
+	public List<Scope> getScopesByApplicationId(String applicationId) {
+		if (applicationId == null || applicationId.isEmpty()) {
+			return null;
+		}
+		return scopeRepository.findByApplicationId(applicationId).orElse(null);
+	}
 }
