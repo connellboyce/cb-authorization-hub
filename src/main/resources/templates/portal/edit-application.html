@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Manage Application</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div class="px-8 pt-16 lg:px-16">
+    <h2 class="text-white font-bold text-3xl lg:text-xl text-center">connell<span class="text-[#f9004d]">boyce</span>.com</h2>
+    <h1 class="text-white font-bold text-5xl lg:text-3xl mb-4 text-center">developer<span class="text-[#f9004d]">hub</span></h1>
+    <hr>
+    <h1 class="text-white font-bold text-5xl my-4 text-center">edit <span class="text-[#f9004d]">application</span></h1>
+    <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto mt-8 mx-16">
+        <form th:action="@{/portal/operation/application}" method="post" class="pb-8">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <input type="hidden" name="_method" value="put" />
+            <input type="hidden" name="id" th:value="${app.id}" />
+            <div class="pb-4">
+                <label for="applicationName" class="text-white text-4xl lg:text-2xl block">Application Name</label>
+                <input type="text" id="applicationName" name="applicationName" placeholder="My Application" th:value="${app.name}" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-1/2"/>
+            </div>
+            <div class="pb-4">
+                <label for="applicationDesc" class="text-white text-4xl lg:text-2xl block">Description</label>
+                <input type="text" id="applicationDesc" name="description" placeholder="Service that does X Y Z" th:value="${app.description}" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-full"/>
+            </div>
+            <input class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4"
+                   type="submit"
+                   value="Update" />
+        </form>
+        <div class="text-white pt-8">
+            <table class="w-full">
+                <thead class="border-white border-b">
+                    <th class="text-left">Scopes</th>
+                    <th class="text-center">Actions</th>
+                </thead>
+                <tbody>
+                    <th:block th:each="scope : ${scopes}">
+                        <tr>
+                            <td th:text="${scope.name}" class="text-left"></td>
+                            <td class="flex gap-4 justify-center">
+                                <div>
+                                    <form th:action="@{/portal/operation/scope/{id}(id=${scope.id})}" method="post">
+                                        <input type="hidden" name="_method" value="delete" />
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                        <input class="bg-red-600 rounded-lg p-2 border-4 border-red-600 hover:bg-neutral-900 cursor-pointer"
+                                               type="submit"
+                                               value="Delete" />
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </th:block>
+                </tbody>
+            </table>
+            <form th:action="@{/portal/operation/scope}" method="post">
+                <input type="hidden" name="applicationId" th:value="${app.id}" />
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="text" id="scopeName" name="name" placeholder="Scope Name" class="h-12 rounded-lg my-2 text-xl lg:text-2xl w-1/2 text-black"/>
+                <input class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-xl mt-8 lg:mt-4"
+                       type="submit"
+                       value="+ Create New Scope" />
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
