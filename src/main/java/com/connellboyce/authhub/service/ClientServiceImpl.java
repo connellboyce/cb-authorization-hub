@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,5 +36,10 @@ public class ClientServiceImpl implements ClientService {
 		mongoClient.setOwnerId(ownerId);
 
 		return repository.save(mongoClient);
+	}
+
+	@Override
+	public List<MongoRegisteredClient> getClientsByOwner(String ownerId) {
+		return repository.findByOwnerId(ownerId).orElse(List.of());
 	}
 }

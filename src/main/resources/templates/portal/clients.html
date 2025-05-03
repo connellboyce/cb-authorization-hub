@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Developer Hub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div class="pt-16 lg:px-16">
+    <h2 class="text-white font-bold text-3xl lg:text-xl text-center">connell<span class="text-[#f9004d]">boyce</span>.com</h2>
+    <h1 class="text-white font-bold text-5xl lg:text-3xl mb-4 text-center">developer<span class="text-[#f9004d]">hub</span></h1>
+    <hr>
+    <h1 class="text-white font-bold text-5xl my-4 text-center">manage my <span class="text-[#f9004d]">clients</span></h1>
+    <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto mt-8 mx-16">
+        <p class="text-center text-white">Create New</p>
+        <table class="text-white">
+            <th:block th:each="client : ${clients}">
+                <tr>
+                    <td th:text="${client.clientId}"></td>
+                    <td><a><div class="">Edit</div></a></td>
+                    <td><a><div class="">Delete</div></a></td>
+                </tr>
+            </th:block>
+        </table>
+    </div>
+</div>
+</body>
+</html>
