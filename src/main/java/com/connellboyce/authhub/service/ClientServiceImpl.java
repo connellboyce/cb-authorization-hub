@@ -42,4 +42,14 @@ public class ClientServiceImpl implements ClientService {
 	public List<MongoRegisteredClient> getClientsByOwner(String ownerId) {
 		return repository.findByOwnerId(ownerId).orElse(List.of());
 	}
+
+	@Override
+	public MongoRegisteredClient getClientByClientId(String clientId) {
+		return repository.findByClientId(clientId).orElse(null);
+	}
+
+	@Override
+	public void deleteByClientId(String clientId) {
+		repository.deleteByClientId(clientId);
+	}
 }

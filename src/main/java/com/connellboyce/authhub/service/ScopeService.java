@@ -7,4 +7,5 @@ import java.util.List;
 public interface ScopeService {
 	Scope createScope(String name, String applicationId);
 	List<Scope> getScopesByApplicationId(String applicationId);
+	List<Scope> getAllScopes();
 }

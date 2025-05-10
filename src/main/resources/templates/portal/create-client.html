@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Create Client</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div class="px-8 pt-16 lg:px-16">
+    <h2 class="text-white font-bold text-3xl lg:text-xl text-center">connell<span class="text-[#f9004d]">boyce</span>.com</h2>
+    <h1 class="text-white font-bold text-5xl lg:text-3xl mb-4 text-center">developer<span class="text-[#f9004d]">hub</span></h1>
+    <hr>
+    <h1 class="text-white font-bold text-5xl my-4 text-center">create a <span class="text-[#f9004d]">client</span></h1>
+    <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto mt-8 mx-16">
+        <form th:action="@{/portal/operation/client}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="pb-4">
+                <label for="clientId" class="text-white text-4xl lg:text-2xl block">Client ID</label>
+                <input type="text" id="clientId" name="clientId" placeholder="my-client" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-1/2"/>
+            </div>
+            <div class="pb-4">
+                <label for="clientSecret" class="text-white text-4xl lg:text-2xl block">Client Secret</label>
+                <input type="text" id="clientSecret" name="clientSecret" th:value="${generatedSecret}" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-1/2" readonly/>
+                <p class="text-white text-md">Be sure to copy this! You won't be able to access it later.</p>
+            </div>
+            <div class="border border-[#f9004d] rounded-lg border-rounded-lg my-4 text-white">
+                <div class="p-2">
+                    <p class="text-lg">Grant Types</p>
+                    <th:block th:each="grant : ${grantTypes}">
+                        <input type="checkbox" th:id="${grant.key}" name="grantTypes" th:value="${grant.value}">
+                        <label th:for="${grant.key}" th:text="${grant.value}"></label><br>
+                    </th:block>
+                </div>
+            </div>
+            <div class="border border-[#f9004d] rounded-lg border-rounded-lg my-4 text-white pb-4">
+                <div class="p-2">
+                    <p class="text-lg mb-2">Redirect URIs</p>
+                    <div id="redirect-urls">
+                        <div class="flex items-center mb-2 space-x-2">
+                            <input type="text" name="redirectUrls" class="redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2" placeholder="https://example.com/callback">
+                            <button type="button"
+                                    onclick="removeRedirectUrlInput(this)"
+                                    class="bg-red-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-red-800 transition">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button"
+                            onclick="addRedirectUrlInput()"
+                            class="bg-white text-black font-bold px-4 py-1 rounded-lg hover:bg-[#f9004d] hover:text-white transition">
+                        Add
+                    </button>
+                </div>
+            </div>
+            <div class="border border-[#f9004d] rounded-lg border-rounded-lg my-4 text-white pb-2">
+                <th:block th:each="parent : ${scopesByApplication}">
+                    <div class="pt-2 px-2">
+                        <p th:text="${parent.key}" class="text-lg"></p>
+                        <th:block th:each="scope : ${parent.value}">
+                            <div class="block">
+                                <input type="checkbox" th:id="${scope.name}" name="scopes" th:value="${scope.name}">
+                                <label th:for="${scope.name}" th:text="${scope.name}"></label>
+                            </div>
+                        </th:block>
+                    </div>
+                </th:block>
+            </div>
+            <input class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4"
+                   type="submit"
+                   value="Create" />
+        </form>
+    </div>
+</div>
+</body>
+<script>
+    function addRedirectUrlInput() {
+        const container = document.getElementById("redirect-urls");
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex items-center mb-2 space-x-2";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = "redirectUrls";
+        input.placeholder = "https://example.com/callback";
+        input.className = "redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2";
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "bg-red-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-red-800 transition text-black";
+        button.textContent = "Delete";
+        button.onclick = function () {
+            removeRedirectUrlInput(button);
+        };
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(button);
+        container.appendChild(wrapper);
+    }
+
+    function removeRedirectUrlInput(button) {
+        const wrapper = button.parentElement;
+        wrapper.remove();
+    }
+</script>
+</html>

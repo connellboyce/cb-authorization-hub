@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface MongoRegisteredClientRepository extends MongoRepository<MongoRegisteredClient, String> {
 	Optional<MongoRegisteredClient> findByClientId(String clientId);
 	Optional<List<MongoRegisteredClient>> findByOwnerId(String ownerId);
+	void deleteByClientId(String clientId);
 }

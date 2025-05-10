@@ -8,4 +8,6 @@ import java.util.List;
 public interface ClientService {
 	MongoRegisteredClient createClient(RegisteredClient registeredClient, String ownerId);
 	List<MongoRegisteredClient> getClientsByOwner(String ownerId);
+	MongoRegisteredClient getClientByClientId(String clientId);
+	void deleteByClientId(String clientId);
 }
