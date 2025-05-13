@@ -27,7 +27,7 @@
                 <div class="p-2">
                     <p class="text-lg">Grant Types</p>
                     <th:block th:each="grant : ${grantTypes}">
-                        <input type="checkbox" th:id="${grant.key}" name="grantTypes" th:value="${grant.value}">
+                        <input type="checkbox" th:id="${grant.key}" name="grantTypes" th:value="${grant.key}">
                         <label th:for="${grant.key}" th:text="${grant.value}"></label><br>
                     </th:block>
                 </div>
@@ -82,7 +82,7 @@
         input.type = "text";
         input.name = "redirectUrls";
         input.placeholder = "https://example.com/callback";
-        input.className = "redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2";
+        input.className = "redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2 text-black";
 
         const button = document.createElement("button");
         button.type = "button";

@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.connellboyce.authhub.model.payload.request.CreateClientRequest.toRegisteredClient;
 
@@ -43,6 +44,19 @@ public class ClientsController {
 		clientService.createClient(createdClient, userId.get());
 
 		redirectAttributes.addFlashAttribute("success", "Client created successfully!");
+		return "redirect:/portal/clients";
+	}
+
+	@PutMapping("/{clientId}")
+	public String updateClient(@PathVariable("clientId") String clientId, @RequestParam List<String> grantTypes, @RequestParam List<String> redirectUrls, @RequestParam List<String> scopes, Authentication authentication, RedirectAttributes redirectAttributes) {
+		try {
+			clientService.updateClient(clientId, grantTypes, redirectUrls, scopes);
+			redirectAttributes.addFlashAttribute("success", "Client updated successfully!");
+		} catch (Exception e) {
+			LOGGER.error("Error updating client: {}", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			return "redirect:/portal/clients";
+		}
 		return "redirect:/portal/clients";
 	}
 

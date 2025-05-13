@@ -102,6 +102,23 @@ public class PageController {
 	public String editClientPage(@PathVariable("clientId") String clientId, Model model, Authentication authentication) {
 		//TODO: Check if the user is the owner of the client
 		model.addAttribute("client", clientService.getClientByClientId(clientId));
+		model.addAttribute("grantTypes", Map.ofEntries(
+				Map.entry("authorization_code", "Authorization Code"),
+				Map.entry("client_credentials", "Client Credentials"),
+				Map.entry("refresh_token", "Refresh Token")
+		));
+		Map<String, List<Scope>> scopeMap = new HashMap<>();
+		scopeService.getAllScopes().forEach(scope -> {
+			String appName = applicationService.getApplicationById(scope.getApplicationId()).getName();
+			if(scopeMap.containsKey(appName)) {
+				List<Scope> scopeList = scopeMap.get(appName);
+				scopeList.add(scope);
+			} else {
+				scopeMap.put(appName, new ArrayList<>(List.of(scope)));
+			}
+		});
+		model.addAttribute("scopesByApplication", scopeMap);
+
 		return "portal/edit-client";
 	}
 

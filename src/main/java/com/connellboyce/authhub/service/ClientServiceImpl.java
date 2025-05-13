@@ -9,7 +9,9 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,5 +53,17 @@ public class ClientServiceImpl implements ClientService {
 	@Override
 	public void deleteByClientId(String clientId) {
 		repository.deleteByClientId(clientId);
+	}
+
+	@Override
+	public MongoRegisteredClient updateClient(String clientId, List<String> grantTypes, List<String> redirectUris, List<String> scopes) throws Exception {
+		MongoRegisteredClient client = repository.findByClientId(clientId).orElse(null);
+		if (client == null) {
+			throw new Exception("Client not found");
+		}
+		client.setAuthorizationGrantTypes(new HashSet<>(grantTypes));
+		client.setRedirectUris(new HashSet<>(redirectUris));
+		client.setScopes(new HashSet<>(scopes));
+		return repository.save(client);
 	}
 }
