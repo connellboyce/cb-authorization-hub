@@ -10,5 +10,7 @@ The OAuth 2.1 Authorization Framework ([proposal](https://datatracker.ietf.org/d
 - [x] OAuth Server
 - [x] Login Page
 - [ ] Custom themes for login page by client_id parameter
-- [ ] Portal to create / manage clients & scopes
+- [x] Portal to create / manage clients & scopes
 - [ ] Support for public clients (no secrets)
+- [ ] Client secret rotation flow
+- [ ] Token exchange grant extension ([RFC8693]([https://oauth.net/2/token-exchange/](https://datatracker.ietf.org/doc/html/rfc8693)))
