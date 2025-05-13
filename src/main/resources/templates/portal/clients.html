@@ -12,15 +12,32 @@
     <hr>
     <h1 class="text-white font-bold text-5xl my-4 text-center">manage my <span class="text-[#f9004d]">clients</span></h1>
     <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto mt-8 mx-16">
-        <p class="text-center text-white">Create New</p>
-        <table class="text-white">
+        <a href="/portal/clients/create"><div class="text-center text-white bg-[#f9004d] rounded-lg p-2 mb-4 border border-[#f9004d] border-4 hover:bg-neutral-900">+ Create New</div></a>
+        <table class="text-white w-full mt-4">
+            <thead class="border-white border-b">
+            <th class="text-left">Name</th>
+            <th class="text-center">Actions</th>
+            </thead>
+            <tbody>
             <th:block th:each="client : ${clients}">
                 <tr>
-                    <td th:text="${client.clientId}"></td>
-                    <td><a><div class="">Edit</div></a></td>
-                    <td><a><div class="">Delete</div></a></td>
+                    <td th:text="${client.id}" class="hidden"></td>
+                    <td th:text="${client.clientId}" class="text-left"></td>
+                    <td class="flex gap-4 justify-center">
+                        <a th:href="@{/portal/clients/{client}(client=${client.clientId})}"><div class="bg-white rounded-lg text-black p-2 border-4 border-white hover:bg-neutral-900 hover:text-white">Edit</div></a>
+                        <div>
+                            <form th:action="@{/portal/operation/client/{client}(client=${client.clientId})}" method="post">
+                                <input type="hidden" name="_method" value="delete" />
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                <input class="bg-red-600 rounded-lg p-2 border-4 border-red-600 hover:bg-neutral-900 cursor-pointer"
+                                       type="submit"
+                                       value="Delete" />
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             </th:block>
+            </tbody>
         </table>
     </div>
 </div>

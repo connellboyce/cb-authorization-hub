@@ -39,4 +39,9 @@ public class ScopeServiceImpl implements ScopeService {
 		}
 		return scopeRepository.findByApplicationId(applicationId).orElse(null);
 	}
+
+	@Override
+	public List<Scope> getAllScopes() {
+		return scopeRepository.findAll();
+	}
 }

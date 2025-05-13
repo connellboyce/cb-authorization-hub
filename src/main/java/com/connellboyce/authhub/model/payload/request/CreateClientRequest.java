@@ -17,7 +17,7 @@ public class CreateClientRequest {
 	private List<String> scopes;
 	private List<String> grantTypes;
 
-	public RegisteredClient toRegisteredClient() {
+	public static RegisteredClient toRegisteredClient(String clientId, String clientSecret, List<String> redirectUris, List<String> scopes, List<String> grantTypes) {
 		RegisteredClient.Builder clientBuilder = RegisteredClient.withId(String.valueOf(UUID.randomUUID()))
 				.clientId(clientId)
 				.clientIdIssuedAt(Instant.now())
