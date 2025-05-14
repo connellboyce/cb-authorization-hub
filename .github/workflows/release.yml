@@ -1,0 +1,97 @@
+name: Release, Build & Push Docker Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Ensure HEAD matches latest main
+        run: |
+          REMOTE=$(git ls-remote origin refs/heads/main | cut -f1)
+          LOCAL=$(git rev-parse HEAD)
+          echo "Remote main: $REMOTE"
+          echo "Local HEAD:  $LOCAL"
+          if [ "$REMOTE" != "$LOCAL" ]; then
+            echo "::error::HEAD is not the latest commit on main. Please update your branch before releasing."
+            exit 1
+          fi
+
+      - name: Extract version from pom.xml
+        id: get-version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          CLEAN_VERSION=${VERSION%-SNAPSHOT}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "clean_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Set release version in pom.xml
+        run: |
+          mvn versions:set -DnewVersion=${{ env.CLEAN_VERSION }} -DgenerateBackupPoms=false
+
+      - name: Commit and tag release version
+        run: |
+          git add pom.xml
+          git commit -m "ci: Release version ${{ env.CLEAN_VERSION }}"
+          git tag v${{ env.CLEAN_VERSION }}
+          git push origin HEAD
+          git push origin v${{ env.CLEAN_VERSION }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/cb-authorization-hub
+          docker build -t $IMAGE:latest -t $IMAGE:${{ env.CLEAN_VERSION }} .
+          docker push $IMAGE:latest
+          docker push $IMAGE:${{ env.CLEAN_VERSION }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.CLEAN_VERSION }}
+          name: Release v${{ env.CLEAN_VERSION }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump to next snapshot version
+        run: |
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.CLEAN_VERSION }}"
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="$MAJOR.$MINOR.$NEXT_PATCH-SNAPSHOT"
+          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false
+
+      - name: Commit next snapshot version
+        run: |
+          git add pom.xml
+          git commit -m "ci: Start next development version ${{ env.NEXT_VERSION }}"
+          git push origin HEAD
