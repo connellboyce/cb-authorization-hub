@@ -169,6 +169,9 @@ jobs:
       
           echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
       
+          echo "Waiting for PR checks to enter pending state..."
+          sleep 60
+            
           echo "Waiting for PR checks to succeed..."
           for i in {1..30}; do
           STATUS=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.status!="SUCCESS")')
