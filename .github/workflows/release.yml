@@ -84,7 +84,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-and-push-docker:
-    needs: github-release
+    needs: [prepare-release, github-release]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -108,7 +108,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ needs.prepare-release.outputs.release_version }}
           docker build -t $IMAGE:latest -t $IMAGE:${{ needs.github-release.outputs.release_version }} .
           docker push $IMAGE:latest
           docker push $IMAGE:${{ needs.github-release.outputs.release_version }}
