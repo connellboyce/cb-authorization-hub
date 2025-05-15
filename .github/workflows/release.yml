@@ -158,18 +158,26 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Fetching PR number..."
-          PR_NUMBER=$(gh pr list --state open --head "ci/bump-to-*" --json number --jq '.[0].number')
-          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
+          PR_NUMBER=$(gh pr list --state open --base main --json number,headRefName --jq \
+          '.[] | select(.headRefName | startswith("ci/bump-to-")) | .number' | head -n 1)
+      
+          if [ -z "$PR_NUMBER" ]; then
+          echo "No matching PR found from a ci/bump-to-* branch."
+          exit 1
+          fi
+      
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+      
           echo "Waiting for PR checks to succeed..."
           for i in {1..30}; do
-            STATUS=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.status!="SUCCESS")')
-            if [[ -z "$STATUS" ]]; then
-              echo "All checks passed!"
-              break
-            fi
-            echo "Checks not yet complete. Sleeping 30s..."
-            sleep 30
+          STATUS=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.status!="SUCCESS")')
+          if [[ -z "$STATUS" ]]; then
+          echo "All checks passed!"
+          break
+          fi
+          echo "Checks not yet complete. Sleeping 30s..."
+          sleep 30
           done
 
       - name: Merge PR
