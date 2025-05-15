@@ -131,15 +131,24 @@ jobs:
           mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false
           echo "next_snapshot_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Push version bump branch
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git checkout -b ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+          git add pom.xml
+          git commit -m "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}"
+          git push origin ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}"
           title: "ci: Bump to ${{ steps.bump-version.outputs.next_snapshot_version }}"
           body: "This PR bumps the version to the next development iteration."
-          branch: ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+          head: ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
           base: main
-          add-paths: pom.xml
+          commit-message: "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}"
+          push: false
 
   merge-pr:
     needs: bump-to-snapshot
