@@ -2,17 +2,31 @@ name: Release, Build & Push Docker Image
 
 on:
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Type of release'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
 
 jobs:
-  release:
+  prepare-release:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
-      packages: write
+      pull-requests: write
+
+    outputs:
+      release_version: ${{ steps.set-version.outputs.release_version }}
+      release_branch: ${{ steps.set-version.outputs.release_branch }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -21,77 +35,33 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Ensure HEAD matches latest main
+      - name: Calculate and set release version
+        id: set-version
         run: |
-          REMOTE=$(git ls-remote origin refs/heads/main | cut -f1)
-          LOCAL=$(git rev-parse HEAD)
-          echo "Remote main: $REMOTE"
-          echo "Local HEAD:  $LOCAL"
-          if [ "$REMOTE" != "$LOCAL" ]; then
-            echo "::error::HEAD is not the latest commit on main. Please update your branch before releasing."
-            exit 1
-          fi
+          CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          BASE=${CURRENT%-SNAPSHOT}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+          
+          case "${{ github.event.inputs.release_type }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0;;
+            patch) PATCH=$((PATCH + 1));;
+          esac
+          
+          RELEASE_VERSION="$MAJOR.$MINOR.$PATCH"
+          RELEASE_BRANCH="release/v$RELEASE_VERSION"
+          
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "release_branch=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          
+          mvn versions:set -DnewVersion=$RELEASE_VERSION -DgenerateBackupPoms=false
 
-      - name: Extract version from pom.xml
-        id: get-version
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          CLEAN_VERSION=${VERSION%-SNAPSHOT}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "clean_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Configure Git
+      - name: Create release branch and push changes
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-
-      - name: Set release version in pom.xml
-        run: |
-          mvn versions:set -DnewVersion=${{ env.CLEAN_VERSION }} -DgenerateBackupPoms=false
-
-      - name: Commit and tag release version
-        run: |
+          git checkout -b ${{ steps.set-version.outputs.release_branch }}
           git add pom.xml
-          git commit -m "ci: Release version ${{ env.CLEAN_VERSION }}"
-          git tag v${{ env.CLEAN_VERSION }}
-          git push origin HEAD
-          git push origin v${{ env.CLEAN_VERSION }}
+          git commit -m "ci: Prepare release ${{ steps.set-version.outputs.release_version }}"
+          git push origin ${{ steps.set-version.outputs.release_branch }}
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/cb-authorization-hub
-          docker build -t $IMAGE:latest -t $IMAGE:${{ env.CLEAN_VERSION }} .
-          docker push $IMAGE:latest
-          docker push $IMAGE:${{ env.CLEAN_VERSION }}
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ env.CLEAN_VERSION }}
-          name: Release v${{ env.CLEAN_VERSION }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Bump to next snapshot version
-        run: |
-          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.CLEAN_VERSION }}"
-          NEXT_PATCH=$((PATCH + 1))
-          NEXT_VERSION="$MAJOR.$MINOR.$NEXT_PATCH-SNAPSHOT"
-          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-          mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false
-
-      - name: Commit next snapshot version
-        run: |
-          git add pom.xml
-          git commit -m "ci: Start next development version ${{ env.NEXT_VERSION }}"
-          git push origin HEAD
