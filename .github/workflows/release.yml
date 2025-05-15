@@ -2,16 +2,6 @@ name: Release, Build & Push Docker Image
 
 on:
   workflow_dispatch:
-    inputs:
-      release_type:
-        description: 'Type of release'
-        required: true
-        default: 'patch'
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
 
 
 jobs:
@@ -42,11 +32,8 @@ jobs:
           BASE=${CURRENT%-SNAPSHOT}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
           
-          case "${{ github.event.inputs.release_type }}" in
-            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0;;
-            minor) MINOR=$((MINOR + 1)); PATCH=0;;
-            patch) PATCH=$((PATCH + 1));;
-          esac
+          MINOR=$((MINOR + 1))
+          PATCH=0
           
           RELEASE_VERSION="$MAJOR.$MINOR.$PATCH"
           RELEASE_BRANCH="release/v$RELEASE_VERSION"
@@ -112,3 +99,88 @@ jobs:
           docker build -t $IMAGE:latest -t $IMAGE:${{ needs.prepare-release.outputs.release_version }} .
           docker push $IMAGE:latest
           docker push $IMAGE:${{ needs.prepare-release.outputs.release_version }}
+
+  bump-to-snapshot:
+    needs: [build-and-push-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Bump to next SNAPSHOT version
+        id: bump-version
+        run: |
+          CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          BASE=${CURRENT%-SNAPSHOT}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+
+          # Increment minor, reset patch
+          MINOR=$((MINOR + 1))
+          PATCH=0
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH-SNAPSHOT"
+
+          mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false
+          echo "next_snapshot_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit version bump and push branch
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git checkout -b ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+          git add pom.xml
+          git commit -m "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}"
+          git push origin ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "ci: Bump to ${{ steps.bump-version.outputs.next_snapshot_version }}"
+          body: "This PR bumps the version to the next development iteration."
+          head: ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+          base: main
+
+  merge-pr:
+    needs: bump-to-snapshot
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Wait for PR to be mergeable
+        id: wait
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching PR number..."
+          PR_NUMBER=$(gh pr list --state open --head "ci/bump-to-*" --json number --jq '.[0].number')
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+          echo "Waiting for PR checks to succeed..."
+          for i in {1..30}; do
+            STATUS=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.status!="SUCCESS")')
+            if [[ -z "$STATUS" ]]; then
+              echo "All checks passed!"
+              break
+            fi
+            echo "Checks not yet complete. Sleeping 30s..."
+            sleep 30
+          done
+
+      - name: Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge "$PR_NUMBER" --merge --delete-branch --admin
