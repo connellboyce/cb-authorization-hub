@@ -63,5 +63,22 @@ jobs:
           git checkout -b ${{ steps.set-version.outputs.release_branch }}
           git add pom.xml
           git commit -m "ci: Prepare release ${{ steps.set-version.outputs.release_version }}"
+          git tag v${{ steps.set-version.outputs.release_version }}
           git push origin ${{ steps.set-version.outputs.release_branch }}
+          git push origin v${{ steps.set-version.outputs.release_version }}
 
+  github-release-version:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.prepare-release.outputs.release_version }}
+          name: Release v${{ needs.prepare-release.outputs.release_version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
