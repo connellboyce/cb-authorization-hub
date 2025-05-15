@@ -84,17 +84,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-and-push-docker:
-    needs: prepare-release
+    needs: github-release
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-      - name: Checkout the release branch
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          ref: ${{ needs.prepare-release.outputs.release_branch }}
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build Maven project
+        run: mvn package
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -103,13 +106,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
-          docker build -t $IMAGE:latest -t $IMAGE:${{ needs.prepare-release.outputs.release_version }} .
-
-      - name: Push Docker image
-        run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          docker build -t $IMAGE:latest -t $IMAGE:${{ needs.github-release.outputs.release_version }} .
           docker push $IMAGE:latest
-          docker push $IMAGE:${{ needs.prepare-release.outputs.release_version }}
+          docker push $IMAGE:${{ needs.github-release.outputs.release_version }}
