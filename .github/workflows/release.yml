@@ -67,7 +67,7 @@ jobs:
           git push origin ${{ steps.set-version.outputs.release_branch }}
           git push origin v${{ steps.set-version.outputs.release_version }}
 
-  github-release-version:
+  github-release:
     needs: prepare-release
     runs-on: ubuntu-latest
     permissions:
@@ -82,3 +82,34 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push-docker:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the release branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_branch }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          docker build -t $IMAGE:latest -t $IMAGE:${{ needs.prepare-release.outputs.release_version }} .
+
+      - name: Push Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          docker push $IMAGE:latest
+          docker push $IMAGE:${{ needs.prepare-release.outputs.release_version }}
