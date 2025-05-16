@@ -184,7 +184,7 @@ jobs:
             echo "$CHECKS"
           
             INCOMPLETE=$(echo "$CHECKS" | jq -r 'select(.status != "completed")')
-            FAILED=$(echo "$CHECKS" | jq -r 'select(.conclusion != "success")')
+            FAILED=$(echo "$CHECKS" | jq -r 'select(.status == "completed" and .conclusion != "success")')
           
             if [[ -z "$INCOMPLETE" && -z "$FAILED" ]]; then
               echo "✅ All checks completed successfully."
