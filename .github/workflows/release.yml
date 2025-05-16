@@ -43,7 +43,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git checkout -b ${{ steps.set-version.outputs.release_branch }}
-          mvn versions:set -DnewVersion=$RELEASE_VERSION -DgenerateBackupPoms=false
+          mvn versions:set -DnewVersion=${{ steps.set-version.outputs.release_version }} -DgenerateBackupPoms=false
           git add pom.xml
           git commit -m "ci: Prepare release ${{ steps.set-version.outputs.release_version }}"
           git tag v${{ steps.set-version.outputs.release_version }}
