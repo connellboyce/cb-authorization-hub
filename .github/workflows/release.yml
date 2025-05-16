@@ -160,49 +160,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for all GitHub Actions checks to pass
+      - name: Fetch and merge PR
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}  # You must use a PAT, not GITHUB_TOKEN
         run: |
-          echo "Fetching PR number..."
-          PR_NUMBER=$(gh pr list --state open --base main --json number,headRefName --jq \
-            '.[] | select(.headRefName | startswith("ci/bump-to-")) | .number' | head -n 1)
-          
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No matching PR found."
+          echo "Searching for open PR from a ci/bump-to-* branch..."
+
+          PR_INFO=$(gh pr list --state open --base main --json number,headRefName \
+            --jq '.[] | select(.headRefName | test("^ci/bump-to-"))')
+
+          if [ -z "$PR_INFO" ]; then
+            echo "❌ No PR found from a ci/bump-to-* branch targeting main."
             exit 1
           fi
-          
-          echo "Fetching latest commit SHA..."
+
+          PR_NUMBER=$(echo "$PR_INFO" | jq -r '.number')
+          echo "✅ Found PR #$PR_NUMBER"
+
+          echo "Waiting for checks to succeed..."
+
           COMMIT_SHA=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[-1].oid')
-          
+          echo "Latest commit SHA: $COMMIT_SHA"
+
           for i in {1..30}; do
-            echo "Checking status of all check runs for $COMMIT_SHA..."
             CHECKS=$(gh api /repos/${{ github.repository }}/commits/$COMMIT_SHA/check-runs \
+              -H "Accept: application/vnd.github.v3+json" \
               --jq '.check_runs[] | {name: .name, status: .status, conclusion: .conclusion}')
-          
-            echo "$CHECKS"
-          
-            INCOMPLETE=$(echo "$CHECKS" | jq -r 'select(.status != "completed")')
-            FAILED=$(echo "$CHECKS" | jq -r 'select(.status == "completed" and .conclusion != "success")')
-          
-            if [[ -z "$INCOMPLETE" && -z "$FAILED" ]]; then
-              echo "✅ All checks completed successfully."
-              break
-            fi
-          
-            if [[ -n "$FAILED" ]]; then
+
+            PENDING=$(echo "$CHECKS" | jq -c 'select(.conclusion == null)')
+            FAILED=$(echo "$CHECKS" | jq -c 'select(.conclusion == "failure")')
+
+            if [ -n "$FAILED" ]; then
               echo "❌ Some checks failed:"
               echo "$FAILED"
               exit 1
+            elif [ -z "$PENDING" ]; then
+              echo "✅ All checks succeeded."
+              break
+            else
+              echo "⏳ Some checks still pending:"
+              echo "$PENDING"
+              sleep 30
             fi
-          
-            echo "⏳ Checks still running. Sleeping 30s..."
-            sleep 30
           done
 
-      - name: Merge PR
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
+          echo "Merging PR #$PR_NUMBER..."
           gh pr merge "$PR_NUMBER" --merge --admin
