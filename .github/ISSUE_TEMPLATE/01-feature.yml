@@ -1,0 +1,35 @@
+name: Feature
+description: File a feature request.
+title: "[Feature]: "
+labels: ["feature"]
+projects: ["connellboyce/12"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this feature request.
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Information
+      description: Please provide your contact information (email, GitHub username, etc.) so I can reach you if needed.
+      placeholder: example@email.com
+    validations:
+      required: false
+  - type: textarea
+    id: feature-info
+    attributes:
+      label: What is the user story?
+      description: Describe the details of the user story.
+      placeholder: |
+        As a [type of user], I want [some goal] so that [some reason].
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow this project's [Code of Conduct](https://example.com).
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
