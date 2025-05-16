@@ -97,7 +97,7 @@ jobs:
           docker push $IMAGE:latest
           docker push $IMAGE:${{ needs.prepare-release.outputs.release_version }}
 
-  bump-to-snapshot:
+  create-development-version-pr:
     needs: [build-and-push-docker]
     runs-on: ubuntu-latest
     permissions:
@@ -139,7 +139,9 @@ jobs:
           git config user.email "actions@github.com"
           git checkout -b ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
           git add pom.xml
-          git commit -m "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}"
+          git commit -m "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}
+
+          Co-authored-by: GitHub Actions <actions@github.com>"
           git push origin ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
           
           gh auth setup-git
@@ -149,8 +151,8 @@ jobs:
             --head ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }} \
             --base main
 
-  merge-pr:
-    needs: bump-to-snapshot
+  merge-development-version-pr:
+    needs: create-development-version-pr
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -160,9 +162,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Fetch and merge PR
+      - name: Wait for checks to succeed and merge PR
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}  # You must use a PAT, not GITHUB_TOKEN
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           echo "Searching for open PR from a ci/bump-to-* branch..."
 
@@ -170,12 +172,12 @@ jobs:
             --jq '.[] | select(.headRefName | test("^ci/bump-to-"))')
 
           if [ -z "$PR_INFO" ]; then
-            echo "❌ No PR found from a ci/bump-to-* branch targeting main."
+            echo "No PR found from a ci/bump-to-* branch targeting main."
             exit 1
           fi
 
           PR_NUMBER=$(echo "$PR_INFO" | jq -r '.number')
-          echo "✅ Found PR #$PR_NUMBER"
+          echo "Found PR #$PR_NUMBER"
 
           echo "Waiting for checks to succeed..."
 
@@ -191,14 +193,14 @@ jobs:
             FAILED=$(echo "$CHECKS" | jq -c 'select(.conclusion == "failure")')
 
             if [ -n "$FAILED" ]; then
-              echo "❌ Some checks failed:"
+              echo "Some checks failed:"
               echo "$FAILED"
               exit 1
             elif [ -z "$PENDING" ]; then
-              echo "✅ All checks succeeded."
+              echo "All checks succeeded."
               break
             else
-              echo "⏳ Some checks still pending:"
+              echo "Some checks still pending:"
               echo "$PENDING"
               sleep 30
             fi
@@ -206,3 +208,12 @@ jobs:
 
           echo "Merging PR #$PR_NUMBER..."
           gh pr merge "$PR_NUMBER" --merge --admin
+
+  deploy-application:
+    needs: merge-development-version-pr
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Deploy Hook
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DEPLOY_HOOK }}"
