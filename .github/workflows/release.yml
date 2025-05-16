@@ -3,14 +3,73 @@ name: Release, Build & Push Docker Image
 on:
   workflow_dispatch:
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
 
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
+      pull-requests: write
 
+    outputs:
+      release_version: ${{ steps.set-version.outputs.release_version }}
+      release_branch: ${{ steps.set-version.outputs.release_branch }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Calculate and set release version
+        id: set-version
+        run: |
+          CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          BASE=${CURRENT%-SNAPSHOT}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+          
+          RELEASE_VERSION="$MAJOR.$MINOR.$PATCH"
+          RELEASE_BRANCH="release/v$RELEASE_VERSION"
+          
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "release_branch=$RELEASE_BRANCH" >> $GITHUB_OUTPUT
+          
+          mvn versions:set -DnewVersion=$RELEASE_VERSION -DgenerateBackupPoms=false
+
+      - name: Create release branch and push changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git checkout -b ${{ steps.set-version.outputs.release_branch }}
+          git add pom.xml
+          git commit -m "ci: Prepare release ${{ steps.set-version.outputs.release_version }}"
+          git tag v${{ steps.set-version.outputs.release_version }}
+          git push origin ${{ steps.set-version.outputs.release_branch }}
+          git push origin v${{ steps.set-version.outputs.release_version }}
+
+  github-release:
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.prepare-release.outputs.release_version }}
+          name: Release v${{ needs.prepare-release.outputs.release_version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-push-docker:
+    needs: [prepare-release, github-release]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,43 +80,8 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Ensure HEAD matches latest main
-        run: |
-          REMOTE=$(git ls-remote origin refs/heads/main | cut -f1)
-          LOCAL=$(git rev-parse HEAD)
-          echo "Remote main: $REMOTE"
-          echo "Local HEAD:  $LOCAL"
-          if [ "$REMOTE" != "$LOCAL" ]; then
-            echo "::error::HEAD is not the latest commit on main. Please update your branch before releasing."
-            exit 1
-          fi
-
-      - name: Extract version from pom.xml
-        id: get-version
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          CLEAN_VERSION=${VERSION%-SNAPSHOT}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CLEAN_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "clean_version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Configure Git
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-
-      - name: Set release version in pom.xml
-        run: |
-          mvn versions:set -DnewVersion=${{ env.CLEAN_VERSION }} -DgenerateBackupPoms=false
-
-      - name: Commit and tag release version
-        run: |
-          git add pom.xml
-          git commit -m "ci: Release version ${{ env.CLEAN_VERSION }}"
-          git tag v${{ env.CLEAN_VERSION }}
-          git push origin HEAD
-          git push origin v${{ env.CLEAN_VERSION }}
+      - name: Build Maven project
+        run: mvn package
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -68,30 +92,128 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/cb-authorization-hub
-          docker build -t $IMAGE:latest -t $IMAGE:${{ env.CLEAN_VERSION }} .
+          IMAGE=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          docker build -t $IMAGE:latest -t $IMAGE:${{ needs.prepare-release.outputs.release_version }} .
           docker push $IMAGE:latest
-          docker push $IMAGE:${{ env.CLEAN_VERSION }}
+          docker push $IMAGE:${{ needs.prepare-release.outputs.release_version }}
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+  create-development-version-pr:
+    needs: [build-and-push-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
         with:
-          tag_name: v${{ env.CLEAN_VERSION }}
-          name: Release v${{ env.CLEAN_VERSION }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
-      - name: Bump to next snapshot version
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Bump to next SNAPSHOT version
+        id: bump-version
         run: |
-          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.CLEAN_VERSION }}"
-          NEXT_PATCH=$((PATCH + 1))
-          NEXT_VERSION="$MAJOR.$MINOR.$NEXT_PATCH-SNAPSHOT"
-          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          BASE=${CURRENT%-SNAPSHOT}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+
+          # Increment minor, reset patch
+          MINOR=$((MINOR + 1))
+          PATCH=0
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH-SNAPSHOT"
+
           mvn versions:set -DnewVersion=$NEXT_VERSION -DgenerateBackupPoms=false
+          echo "next_snapshot_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Commit next snapshot version
+      - name: Push version bump branch and create PR
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git checkout -b ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
           git add pom.xml
-          git commit -m "ci: Start next development version ${{ env.NEXT_VERSION }}"
-          git push origin HEAD
+          git commit -m "ci: Bump version to ${{ steps.bump-version.outputs.next_snapshot_version }}
+
+          Co-authored-by: GitHub Actions <actions@github.com>"
+          git push origin ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }}
+          
+          gh auth setup-git
+          gh pr create \
+            --title "ci: Bump to ${{ steps.bump-version.outputs.next_snapshot_version }}" \
+            --body "This PR bumps the version to the next development iteration." \
+            --head ci/bump-to-${{ steps.bump-version.outputs.next_snapshot_version }} \
+            --base main
+
+  merge-development-version-pr:
+    needs: create-development-version-pr
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Wait for checks to succeed and merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          echo "Searching for open PR from a ci/bump-to-* branch..."
+
+          PR_INFO=$(gh pr list --state open --base main --json number,headRefName \
+            --jq '.[] | select(.headRefName | test("^ci/bump-to-"))')
+
+          if [ -z "$PR_INFO" ]; then
+            echo "No PR found from a ci/bump-to-* branch targeting main."
+            exit 1
+          fi
+
+          PR_NUMBER=$(echo "$PR_INFO" | jq -r '.number')
+          echo "Found PR #$PR_NUMBER"
+
+          echo "Waiting for checks to succeed..."
+
+          COMMIT_SHA=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[-1].oid')
+          echo "Latest commit SHA: $COMMIT_SHA"
+
+          for i in {1..30}; do
+            CHECKS=$(gh api /repos/${{ github.repository }}/commits/$COMMIT_SHA/check-runs \
+              -H "Accept: application/vnd.github.v3+json" \
+              --jq '.check_runs[] | {name: .name, status: .status, conclusion: .conclusion}')
+
+            PENDING=$(echo "$CHECKS" | jq -c 'select(.conclusion == null)')
+            FAILED=$(echo "$CHECKS" | jq -c 'select(.conclusion == "failure")')
+
+            if [ -n "$FAILED" ]; then
+              echo "Some checks failed:"
+              echo "$FAILED"
+              exit 1
+            elif [ -z "$PENDING" ]; then
+              echo "All checks succeeded."
+              break
+            else
+              echo "Some checks still pending:"
+              echo "$PENDING"
+              sleep 30
+            fi
+          done
+
+          echo "Merging PR #$PR_NUMBER..."
+          gh pr merge "$PR_NUMBER" --merge --admin
+
+  deploy-application:
+    needs: merge-development-version-pr
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Deploy Hook
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" "${{ secrets.DEPLOY_HOOK }}"
