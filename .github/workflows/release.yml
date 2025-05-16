@@ -160,35 +160,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for all PR checks to succeed
+      - name: Wait for all GitHub Actions checks to pass
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           echo "Fetching PR number..."
           PR_NUMBER=$(gh pr list --state open --base main --json number,headRefName --jq \
-          '.[] | select(.headRefName | startswith("ci/bump-to-")) | .number' | head -n 1)
+            '.[] | select(.headRefName | startswith("ci/bump-to-")) | .number' | head -n 1)
           
           if [ -z "$PR_NUMBER" ]; then
-            echo "No matching PR found from a ci/bump-to-* branch."
+            echo "No matching PR found."
             exit 1
           fi
           
-          echo "Fetching commit SHA..."
+          echo "Fetching latest commit SHA..."
           COMMIT_SHA=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[-1].oid')
           
-          echo "Waiting for checks on commit $COMMIT_SHA to succeed..."
           for i in {1..30}; do
-            STATUS=$(gh api /repos/${{ github.repository }}/commits/$COMMIT_SHA/status \
-              --jq '.state')
-            echo "Current status: $STATUS"
-            if [[ "$STATUS" == "success" ]]; then
-              echo "All checks passed!"
+            echo "Checking status of all check runs for $COMMIT_SHA..."
+            CHECKS=$(gh api /repos/${{ github.repository }}/commits/$COMMIT_SHA/check-runs \
+              --jq '.check_runs[] | {name: .name, status: .status, conclusion: .conclusion}')
+          
+            echo "$CHECKS"
+          
+            INCOMPLETE=$(echo "$CHECKS" | jq -r 'select(.status != "completed")')
+            FAILED=$(echo "$CHECKS" | jq -r 'select(.conclusion != "success")')
+          
+            if [[ -z "$INCOMPLETE" && -z "$FAILED" ]]; then
+              echo "✅ All checks completed successfully."
               break
-            elif [[ "$STATUS" == "failure" ]]; then
-              echo "Some checks failed. Aborting."
+            fi
+          
+            if [[ -n "$FAILED" ]]; then
+              echo "❌ Some checks failed:"
+              echo "$FAILED"
               exit 1
             fi
-            echo "Checks not yet successful. Sleeping 30s..."
+          
+            echo "⏳ Checks still running. Sleeping 30s..."
             sleep 30
           done
 
