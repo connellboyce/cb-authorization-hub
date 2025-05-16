@@ -160,12 +160,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Wait for PR checks to succeed
+      - name: Wait for all PR checks to succeed
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           echo "Fetching PR number..."
-          
           PR_NUMBER=$(gh pr list --state open --base main --json number,headRefName --jq \
           '.[] | select(.headRefName | startswith("ci/bump-to-")) | .number' | head -n 1)
           
@@ -174,28 +173,22 @@ jobs:
             exit 1
           fi
           
-          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "Fetching commit SHA..."
+          COMMIT_SHA=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[-1].oid')
           
-          echo "Waiting for PR checks to start reporting..."
-          
+          echo "Waiting for checks on commit $COMMIT_SHA to succeed..."
           for i in {1..30}; do
-            STATUS_COUNT=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup | length')
-            if [ "$STATUS_COUNT" -ge 2 ]; then
-              echo "Found $STATUS_COUNT status checks"
-              break
-            fi
-            echo "Checks not yet reported. Sleeping 30s..."
-            sleep 30
-          done
-          
-          echo "Waiting for all checks to succeed..."
-          for i in {1..30}; do
-            FAILED=$(gh pr view "$PR_NUMBER" --json statusCheckRollup --jq '.statusCheckRollup[] | select(.status != "SUCCESS")')
-            if [[ -z "$FAILED" ]]; then
+            STATUS=$(gh api /repos/${{ github.repository }}/commits/$COMMIT_SHA/status \
+              --jq '.state')
+            echo "Current status: $STATUS"
+            if [[ "$STATUS" == "success" ]]; then
               echo "All checks passed!"
               break
+            elif [[ "$STATUS" == "failure" ]]; then
+              echo "Some checks failed. Aborting."
+              exit 1
             fi
-            echo "Some checks are still pending or failing. Sleeping 30s..."
+            echo "Checks not yet successful. Sleeping 30s..."
             sleep 30
           done
 
