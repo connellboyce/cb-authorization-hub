@@ -1,4 +1,4 @@
-# Contributing to Spring Authorization Server (Personal Project)
+# Contributing to CB Authorization Hub
 
 Thank you for your interest in this project. While this is a personal project and not a traditional open source initiative, I do welcome engagement from the community in a limited capacity.
 
