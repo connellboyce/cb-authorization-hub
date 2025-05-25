@@ -46,7 +46,6 @@ public class PageController {
 				model.addAttribute(param, value);
 			}
 		});
-		System.out.println("Login page accessed with preserved params: " + model.toString());
 		return "login";
 	}
 
