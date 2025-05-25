@@ -6,7 +6,9 @@ import com.connellboyce.authhub.service.ApplicationService;
 import com.connellboyce.authhub.service.ClientService;
 import com.connellboyce.authhub.service.ScopeService;
 import com.connellboyce.authhub.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -21,6 +23,9 @@ import java.util.*;
 @Controller
 public class PageController {
 
+	@Value("#{'${spring.security.login.entry-point.preserved-params}'.split(',')}")
+	private Set<String> preservedParams;
+
 	@Autowired
 	private ClientService clientService;
 
@@ -34,7 +39,14 @@ public class PageController {
 	private ScopeService scopeService;
 
 	@GetMapping("/login")
-	public String login() {
+	public String login(HttpSession session, Model model) {
+		preservedParams.forEach(param -> {
+			Object value = session.getAttribute("auth_param_" + param);
+			if (value != null) {
+				model.addAttribute(param, value);
+			}
+		});
+		System.out.println("Login page accessed with preserved params: " + model.toString());
 		return "login";
 	}
 
