@@ -46,6 +46,10 @@ public class PageController {
 				model.addAttribute(param, value);
 			}
 		});
+		if (model.getAttribute("client_id") != null) {
+			model.addAttribute("client", clientService.getClientByClientId(Objects.requireNonNull(model.getAttribute("client_id")).toString()));
+		}
+
 		return "login";
 	}
 
