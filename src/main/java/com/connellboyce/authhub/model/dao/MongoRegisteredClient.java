@@ -21,4 +21,5 @@ public class MongoRegisteredClient {
 	private Set<String> scopes;
 	private boolean requireAuthorizationConsent;
 	private String ownerId;
+	private boolean useCustomTheme;
 }
