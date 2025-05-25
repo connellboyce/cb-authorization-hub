@@ -1,5 +1,6 @@
 package com.connellboyce.authhub.config;
 
+import com.connellboyce.authhub.filter.AuthorizationRequestFilter;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
 import com.connellboyce.authhub.service.UserDetailsServiceImpl;
@@ -8,6 +9,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -29,6 +31,7 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.filter.HiddenHttpMethodFilter;
 
@@ -44,6 +47,9 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class WebSecurityConfig {
+
+	@Value("#{'${spring.security.login.entry-point.preserved-params}'.split(',')}")
+	Set<String> preservedParams;
 
 	@Bean
 	@Order(1)
@@ -62,6 +68,8 @@ public class WebSecurityConfig {
 				.oauth2ResourceServer((resourceServer) -> resourceServer
 						.jwt(withDefaults()));
 
+		http.addFilterBefore(new AuthorizationRequestFilter(preservedParams), UsernamePasswordAuthenticationFilter.class);
+
 		return http.build();
 	}
 
@@ -74,7 +82,9 @@ public class WebSecurityConfig {
 						.requestMatchers("/error").permitAll()
 						.requestMatchers("/api/v1/user").permitAll()
 						.requestMatchers("/register").permitAll()
+						.requestMatchers("/login").permitAll()
 						.requestMatchers("/portal/**").hasRole("DEVELOPER")
+						.requestMatchers("/portal").hasRole("DEVELOPER")
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
 				.userDetailsService(userDetailsService)
