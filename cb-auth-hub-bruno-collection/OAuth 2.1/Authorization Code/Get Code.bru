@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: {{oauth.base-url}}/oauth2/authorize?client_id={{oauth.client-id}}&response_type=code&redirect_uri=http://localhost:2121/path/to/redirect/to&scope=read write
+  url: {{oauth.base-url}}/oauth2/authorize?client_id={{oauth.client-id}}&response_type=code&redirect_uri=https://auth.connellboyce.com/callback&scope=openid profile email
   body: none
   auth: none
 }
@@ -13,6 +13,6 @@ get {
 params:query {
   client_id: {{oauth.client-id}}
   response_type: code
-  redirect_uri: http://localhost:2121/path/to/redirect/to
-  scope: read write
+  redirect_uri: https://auth.connellboyce.com/callback
+  scope: openid profile email
 }
