@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 @RestController
-@RequestMapping(value = {"", "/.well_known"})
+@RequestMapping(value = {"", "/.well-known"})
 public class WellKnownFileController {
 	@GetMapping("/robots.txt")
 	public ResponseEntity<?> getRobotsDotTxt() {
