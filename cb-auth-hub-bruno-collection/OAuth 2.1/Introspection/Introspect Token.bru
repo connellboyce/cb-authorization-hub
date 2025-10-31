@@ -1,0 +1,20 @@
+meta {
+  name: Introspect Token
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{oauth.base-url}}/oauth2/introspect
+  body: formUrlEncoded
+  auth: basic
+}
+
+auth:basic {
+  username: {{oauth.client-id}}
+  password: {{oauth.client-secret}}
+}
+
+body:form-urlencoded {
+  token: eyJraWQiOiI4YjViYmQ1NS0yMDRkLTQ3ZWUtOWQ5Ny01NDRkN2FlYzc4OGQiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJwcm9kLWlzc3VlLXRlc3QiLCJhdWQiOiJwcm9kLWlzc3VlLXRlc3QiLCJuYmYiOjE3NDkyNjI4NzIsInJvbGUiOltdLCJpc3MiOiJodHRwczovL2F1dGguY29ubmVsbGJveWNlLmNvbSIsImV4cCI6MTc0OTI2MzE3MiwiaWF0IjoxNzQ5MjYyODcyLCJqdGkiOiI0MDk4OTcwZi05NzE1LTRhM2ItYmMxOC1kNmQ3YTVmMTBmYzMifQ.DpNGFvu3j5seifabi2ENVmgplrXpHO5Ws5zxA5Je6GFUedrq7sKDvYorjmaC252wrufrEJd_oBFy27yu3TjBYm1jysKI0FabcF_4Eo35FvbC0xwyF1IyjqUrofOwmrhTQ1_QYt5HFKvGf8dCzjuN91uGSRsCG7iAdZks_v8pAPZx51RrHiV7GkjdJCGvC4cKPuUtT-BMY_M9NOOhnAPFEI_kmzmXPfU3_D6J9iad3Qz72BWZQW5CWyCp4VyHtV-_wChz0QhDvG2a34kPL84hZ7AbkE0z0cunniUpkVahWVaOnKRzbBv3MtqCSpZVyJnwhuOi33qNSiJV_vj7LJkM3Q
+}

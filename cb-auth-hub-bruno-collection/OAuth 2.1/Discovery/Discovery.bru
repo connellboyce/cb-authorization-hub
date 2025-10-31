@@ -1,0 +1,11 @@
+meta {
+  name: Discovery
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{oauth.base-url}}/.well-known/oauth-authorization-server
+  body: none
+  auth: none
+}
