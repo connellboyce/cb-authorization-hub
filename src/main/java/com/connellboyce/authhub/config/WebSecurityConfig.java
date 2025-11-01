@@ -112,7 +112,8 @@ public class WebSecurityConfig {
 						"/css/**",
 						"/assets/**",
 						"/favicon.ico",
-						"/.well_known/**",
+						"/.well-known/robots.txt",
+						"/.well-known/humans.txt",
 						"/actuator/**",
 						"/api/v1/user"
 				);
