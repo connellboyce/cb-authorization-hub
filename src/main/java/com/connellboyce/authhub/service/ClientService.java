@@ -5,7 +5,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
 import java.util.List;
-import java.util.Set;
 
 public interface ClientService {
 	MongoRegisteredClient createClient(RegisteredClient registeredClient, String ownerId);

@@ -12,7 +12,7 @@
     <hr>
     <h1 class="text-white font-bold text-5xl my-4 text-center">edit <span class="text-[#f9004d]">client</span></h1>
     <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto mt-8 mx-16">
-        <form th:action="@{/portal/operation/client/{client}(client=${client.clientId})}" method="post" class="pb-8">
+        <form th:action="@{/portal/operation/client}" method="post" class="pb-8">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <input type="hidden" name="_method" value="put" />
             <div class="pb-4">
