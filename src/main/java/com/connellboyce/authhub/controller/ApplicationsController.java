@@ -40,6 +40,7 @@ public class ApplicationsController {
 	}
 
 	@PutMapping
+	@PreAuthorize("@applicationService.validateApplicationOwnership(authentication, #id)")
 	public String updateApplication(@RequestParam("id") String id, @RequestParam("applicationName") String name, @RequestParam("description") String description, Authentication authentication, RedirectAttributes redirectAttributes) {
 		Optional<String> userId = authUtilService.getUserIdFromAuthentication(authentication);
 		if (userId.isEmpty()) {
