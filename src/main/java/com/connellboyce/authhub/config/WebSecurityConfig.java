@@ -165,6 +165,7 @@ public class WebSecurityConfig {
 				Set<String> authorities = principal.getAuthorities().stream().map(GrantedAuthority::getAuthority)
 						.collect(Collectors.toSet());
 				context.getClaims().claim("role", authorities);
+				context.getClaims().claim("scope", context.getAuthorizedScopes());
 			}
 		};
 	}
