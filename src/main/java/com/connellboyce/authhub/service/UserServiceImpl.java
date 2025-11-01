@@ -22,9 +22,10 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
-	public UserDetails createUser(String username, String password, String email, String firstName, String lastName) {
+	public UserDetails createUser(String username, String password, String email, String firstName, String lastName) throws IllegalArgumentException {
+		String id = String.valueOf(UUID.randomUUID());
 		CBUser newUser = new CBUser(
-				String.valueOf(UUID.randomUUID()),
+				id,
 				username,
 				passwordEncoder.encode(password),
 				Set.of(CBRole.ROLE_USER.withoutPrefix()),
@@ -32,6 +33,15 @@ public class UserServiceImpl implements UserService {
 				firstName,
 				lastName
 		);
+		userRepository.findById(id).ifPresent(existingUser -> {
+			throw new IllegalArgumentException("User ID already exists");
+		});
+		userRepository.findByUsername(username).ifPresent(existingUser -> {
+			throw new IllegalArgumentException("Username already exists");
+		});
+		userRepository.findByEmail(email).ifPresent(existingUser -> {
+			throw new IllegalArgumentException("Email already exists");
+		});
 
 		userRepository.save(newUser);
 
