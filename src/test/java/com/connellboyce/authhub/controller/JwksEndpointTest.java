@@ -1,4 +1,4 @@
-package com.connellboyce.authhub;
+package com.connellboyce.authhub.controller;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,22 +15,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-public class ActuatorEndpointsTest {
+public class JwksEndpointTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void testGetInfo() {
+    void testJwks() {
         try {
-            mockMvc.perform(get("/actuator/info"))
+            mockMvc.perform(get("/oauth2/jwks"))
                     .andExpect(status().is(200))
-                    .andExpect(jsonPath("$.app.name").value("CB Authorization Hub"))
-                    .andExpect(jsonPath("$.app.version").isString())
-                    .andExpect(jsonPath("$.app.description").isString())
-                    .andExpect(jsonPath("$.git.branch").isString())
-                    .andExpect(jsonPath("$.git.commit.id").isString())
-                    .andExpect(jsonPath("$.git.commit.time").isString());
+                    .andExpect(jsonPath("$.keys").isArray())
+                    .andExpect(jsonPath("$.keys[0].kty").exists())
+                    .andExpect(jsonPath("$.keys[0].e").exists())
+                    .andExpect(jsonPath("$.keys[0].kid").exists())
+                    .andExpect(jsonPath("$.keys[0].n").exists());
         } catch (Exception e) {
             fail("Exception occurred while attempting to get jwks: " + e.getMessage());
         }
