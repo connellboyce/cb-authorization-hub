@@ -38,6 +38,7 @@ class ApplicationServiceImplTest {
 	@Test
 	void testCreateApplication_invalidInput() {
 		assertThrows(IllegalArgumentException.class, () -> applicationService.createApplication(null, "desc", "owner"));
+		assertThrows(IllegalArgumentException.class, () -> applicationService.createApplication("", "desc", "owner"));
 		assertThrows(IllegalArgumentException.class, () -> applicationService.createApplication("name", "", "owner"));
 		assertThrows(IllegalArgumentException.class, () -> applicationService.createApplication("name", null, "owner"));
 		assertThrows(IllegalArgumentException.class, () -> applicationService.createApplication("name", "desc", ""));
@@ -112,6 +113,11 @@ class ApplicationServiceImplTest {
 	void deleteApplicationById_success() {
 		applicationService.deleteApplicationById("1");
 		verify(applicationRepository).deleteApplicationById("1");
+	}
+
+	@Test
+	void testvalidateApplicationOwnership_returnsFalse_noAuthentication() {
+		assertFalse(applicationService.validateApplicationOwnership(null, "appId"));
 	}
 
 	@Test
@@ -210,38 +216,9 @@ class ApplicationServiceImplTest {
 	}
 
 	@Test
-	void validateApplicationOwnership_returnsFalse_whenUserIdNull() {
+	void testValidateApplicationOwnership_returnsFalse_whenApplicationIdNullOrEmpty() {
 		Authentication auth = mock(Authentication.class);
-		UserDetails userDetails = new User("alice", "pass", Set.of());
-		when(auth.getPrincipal()).thenReturn(userDetails);
-
-		CBUser user = new CBUser(null, "alice", "pass", Set.of(), "email", "Alice", "Smith");
-
-		Application app = new Application("app123", "App", "Desc", null);
-
-		when(userService.getCBUserByUsername("alice")).thenReturn(user);
-		when(applicationRepository.findById("app123")).thenReturn(Optional.of(app));
-
-		boolean result = applicationService.validateApplicationOwnership(auth, "app123");
-
-		assertFalse(result);
-	}
-
-	@Test
-	void validateApplicationOwnership_returnsFalse_whenUserIdEmpty() {
-		Authentication auth = mock(Authentication.class);
-		UserDetails userDetails = new User("alice", "pass", Set.of());
-		when(auth.getPrincipal()).thenReturn(userDetails);
-
-		CBUser user = new CBUser("", "alice", "pass", Set.of(), "email", "Alice", "Smith");
-
-		Application app = new Application("app123", "App", "Desc", null);
-
-		when(userService.getCBUserByUsername("alice")).thenReturn(user);
-		when(applicationRepository.findById("app123")).thenReturn(Optional.of(app));
-
-		boolean result = applicationService.validateApplicationOwnership(auth, "app123");
-
-		assertFalse(result);
+		assertFalse(applicationService.validateApplicationOwnership(auth, null));
+		assertFalse(applicationService.validateApplicationOwnership(auth, ""));
 	}
 }

@@ -72,9 +72,6 @@ public class ApplicationServiceImpl implements ApplicationService {
 		if (application.getOwnerId() == null || application.getOwnerId().isEmpty()) {
 			return false;
 		}
-		if (user.getId() == null || user.getId().isEmpty()) {
-			return false;
-		}
 
 		return application.getOwnerId().equals(user.getId());
 	}

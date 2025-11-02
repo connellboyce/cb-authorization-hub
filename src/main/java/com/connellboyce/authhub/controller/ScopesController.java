@@ -29,13 +29,16 @@ public class ScopesController {
 				name,
 				applicationId
 		);
-
-		if (result != null) {
-			redirectAttributes.addFlashAttribute("success", "Scope created successfully!");
-		} else {
+		try {
+			if (result != null) {
+				redirectAttributes.addFlashAttribute("success", "Scope created successfully!");
+			} else {
+				redirectAttributes.addFlashAttribute("error", "Scope creation failed");
+			}
+			return "redirect:/portal/applications/" + applicationId;
+		} catch (Exception e) {
 			redirectAttributes.addFlashAttribute("error", "Scope creation failed");
+			return "redirect:/portal/applications/" + applicationId;
 		}
-
-		return "redirect:/portal/applications/" + applicationId;
 	}
 }

@@ -20,14 +20,14 @@ public class ScopeServiceImpl implements ScopeService {
 	@Override
 	public Scope createScope(String name, String applicationId) {
 		if (name == null || name.isEmpty() || applicationId == null || applicationId.isEmpty()) {
-			return null;
+			throw new IllegalArgumentException("Scope name and application ID must be provided.");
 		}
 		if (scopeRepository.findByName(name).isPresent()) {
-			return null;
+			throw new IllegalArgumentException("Name already exists");
 		}
 		Application parentApplication = applicationService.getApplicationById(applicationId);
 		if (parentApplication == null) {
-			return null;
+			throw new IllegalArgumentException("Provided application ID does not exist.");
 		}
 		return scopeRepository.save(new Scope(String.valueOf(UUID.randomUUID()), name, applicationId));
 	}
@@ -35,7 +35,7 @@ public class ScopeServiceImpl implements ScopeService {
 	@Override
 	public List<Scope> getScopesByApplicationId(String applicationId) {
 		if (applicationId == null || applicationId.isEmpty()) {
-			return null;
+			throw new IllegalArgumentException("Application ID must be provided.");
 		}
 		return scopeRepository.findByApplicationId(applicationId).orElse(null);
 	}
