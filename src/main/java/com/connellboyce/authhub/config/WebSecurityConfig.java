@@ -1,9 +1,11 @@
 package com.connellboyce.authhub.config;
 
 import com.connellboyce.authhub.filter.AuthorizationRequestFilter;
+import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
 import com.connellboyce.authhub.service.UserDetailsServiceImpl;
+import com.connellboyce.authhub.service.UserService;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -18,6 +20,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -158,7 +161,7 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
+	OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer(UserService userService) {
 		return context -> {
 			Authentication principal = context.getPrincipal();
 			if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
@@ -166,6 +169,12 @@ public class WebSecurityConfig {
 						.collect(Collectors.toSet());
 				context.getClaims().claim("role", authorities);
 				context.getClaims().claim("scope", context.getAuthorizedScopes());
+				if (principal.getPrincipal() instanceof User user) {
+					context.getClaims().subject(userService.getCBUserByUsername(principal.getName()).getId());
+					context.getClaims().claim("username", user.getUsername());
+				}
+				context.getClaims().claim("azp", context.getRegisteredClient().getClientId());
+				context.getClaims().claim("amr", Set.of("pwd"));
 			}
 		};
 	}

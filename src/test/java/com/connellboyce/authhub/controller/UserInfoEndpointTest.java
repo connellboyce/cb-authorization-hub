@@ -25,6 +25,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -109,6 +110,9 @@ public class UserInfoEndpointTest {
 
 	private String generateUserLevelToken() {
 		try {
+			when(userService.getCBUserByUsername("alice"))
+					.thenReturn(new CBUser("1", "alice", "password", Set.of("USER"), "test@email.com", "Alice", "Smith"));
+
 			MvcResult codeResult = mockMvc.perform(get(AUTHORIZE_ENDPOINT + "?" +
 							"response_type=" + "code" + "&" +
 							"client_id=" + TEST_CLIENT_ID + "&" +

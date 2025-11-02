@@ -1,5 +1,7 @@
 package com.connellboyce.authhub.grants;
 
+import com.connellboyce.authhub.model.dao.CBUser;
+import com.connellboyce.authhub.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,12 +16,16 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,6 +45,9 @@ public class AuthorizationCodeTests {
 	@MockBean
 	private PasswordEncoder passwordEncoder;
 
+	@MockBean
+	private UserService userService;
+
 	private final String AUTHORIZE_ENDPOINT = "/oauth2/authorize";
 	private final String TOKEN_ENDPOINT = "/oauth2/token";
 	private final String TEST_CLIENT_ID = "client";
@@ -51,7 +60,7 @@ public class AuthorizationCodeTests {
 
 	@BeforeEach
 	void setup() {
-		Mockito.when(passwordEncoder.matches(Mockito.matches(TEST_CLIENT_SECRET), Mockito.any())).thenReturn(true);
+		when(passwordEncoder.matches(Mockito.matches(TEST_CLIENT_SECRET), Mockito.any())).thenReturn(true);
 
 		RegisteredClient mockClient = RegisteredClient.withId(TEST_CLIENT_ID)
 				.clientId(TEST_CLIENT_ID)
@@ -66,7 +75,7 @@ public class AuthorizationCodeTests {
 				.scope("offline_access")
 				.build();
 
-		Mockito.when(registeredClientRepository.findByClientId(TEST_CLIENT_ID))
+		when(registeredClientRepository.findByClientId(TEST_CLIENT_ID))
 				.thenReturn(mockClient);
 	}
 
@@ -184,6 +193,9 @@ public class AuthorizationCodeTests {
 	@Test
 	void testAuthorizationCode_roundTrip_success() {
 		try {
+			when(userService.getCBUserByUsername("alice"))
+					.thenReturn(new CBUser("1", "alice", "password", Set.of("USER"), "test@email.com", "Alice", "Smith"));
+
 			MvcResult result = mockMvc.perform(get(AUTHORIZE_ENDPOINT + "?" +
 							"response_type=" + "code" + "&" +
 							"client_id=" + TEST_CLIENT_ID + "&" +
@@ -228,6 +240,9 @@ public class AuthorizationCodeTests {
 	@Test
 	void testAuthorizationCode_roundTrip_withState_success() {
 		try {
+			when(userService.getCBUserByUsername("alice"))
+					.thenReturn(new CBUser("1", "alice", "password", Set.of("USER"), "test@email.com", "Alice", "Smith"));
+
 			MvcResult result = mockMvc.perform(get(AUTHORIZE_ENDPOINT + "?" +
 							"response_type=" + "code" + "&" +
 							"client_id=" + TEST_CLIENT_ID + "&" +
@@ -276,6 +291,9 @@ public class AuthorizationCodeTests {
 	@Test
 	void testAuthorizationCode_roundTrip_openid_success() {
 		try {
+			when(userService.getCBUserByUsername("alice"))
+					.thenReturn(new CBUser("1", "alice", "password", Set.of("USER"), "test@email.com", "Alice", "Smith"));
+
 			MvcResult result = mockMvc.perform(get(AUTHORIZE_ENDPOINT + "?" +
 							"response_type=" + "code" + "&" +
 							"client_id=" + TEST_CLIENT_ID + "&" +
@@ -320,6 +338,9 @@ public class AuthorizationCodeTests {
 	@Test
 	void testAuthorizationCode_roundTrip_refresh_success() {
 		try {
+			when(userService.getCBUserByUsername("alice"))
+					.thenReturn(new CBUser("1", "alice", "password", Set.of("USER"), "test@email.com", "Alice", "Smith"));
+
 			MvcResult result = mockMvc.perform(get(AUTHORIZE_ENDPOINT + "?" +
 							"response_type=" + "code" + "&" +
 							"client_id=" + TEST_CLIENT_ID + "&" +

@@ -15,20 +15,14 @@ public class AuthUtilServiceImpl implements AuthUtilService {
 
 	@Override
 	public Optional<String> getUserIdFromAuthentication(Authentication authentication) {
-		String username = null;
-
 		Object principal = authentication.getPrincipal();
 		if (principal instanceof Jwt jwt) {
-			if (jwt.getClaimAsStringList("role").isEmpty()) {
-				return Optional.empty();
-			}
-			username = jwt.getClaimAsString("sub");
+			return jwt.getClaimAsString("username") != null ? Optional.ofNullable(jwt.getClaimAsString("sub")) : Optional.empty();
 		} else if (principal instanceof UserDetails user) {
-			username = user.getUsername();
+			String username = user.getUsername();
+			return Optional.of(userService.getCBUserByUsername(username).getId());
 		} else {
 			return Optional.empty();
 		}
-
-		return Optional.of(userService.getCBUserByUsername(username).getId());
 	}
 }
