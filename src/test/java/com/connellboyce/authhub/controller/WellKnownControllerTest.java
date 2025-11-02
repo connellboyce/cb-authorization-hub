@@ -59,4 +59,24 @@ class WellKnownControllerTest {
 			fail("Exception during test execution: " + e.getMessage());
 		}
 	}
+
+	@Test
+	void testOidcConfigurationEndpoint() {
+		try {
+			mockMvc.perform(get("/.well-known/openid-configuration"))
+					.andExpect(status().is(200))
+					.andExpect(jsonPath("$.authorization_endpoint").exists())
+					.andExpect(jsonPath("$.token_endpoint").exists())
+					.andExpect(jsonPath("$.token_endpoint_auth_methods_supported").exists())
+					.andExpect(jsonPath("$.jwks_uri").exists())
+					.andExpect(jsonPath("$.response_types_supported").exists())
+					.andExpect(jsonPath("$.grant_types_supported").isArray())
+					.andExpect(jsonPath("$.introspection_endpoint").exists())
+					.andExpect(jsonPath("$.code_challenge_methods_supported").isArray())
+					.andExpect(jsonPath("$.introspection_endpoint_auth_methods_supported").isArray())
+					.andExpect(jsonPath("$.issuer").exists());
+		} catch (Exception e) {
+			fail("Exception during test execution: " + e.getMessage());
+		}
+	}
 }

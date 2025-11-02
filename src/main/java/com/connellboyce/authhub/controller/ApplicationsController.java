@@ -30,13 +30,18 @@ public class ApplicationsController {
 			return "redirect:/portal/applications";
 		}
 
-		Application result = applicationService.createApplication(name, description, userId.get());
-		if (result != null) {
-			redirectAttributes.addFlashAttribute("success", "Application created successfully!");
-		} else {
+		try {
+			Application result = applicationService.createApplication(name, description, userId.get());
+			if (result != null) {
+				redirectAttributes.addFlashAttribute("success", "Application created successfully!");
+			} else {
+				redirectAttributes.addFlashAttribute("error", "Application creation failed");
+			}
+			return "redirect:/portal/applications";
+		} catch (IllegalArgumentException e) {
 			redirectAttributes.addFlashAttribute("error", "Application creation failed");
+			return "redirect:/portal/applications";
 		}
-		return "redirect:/portal/applications";
 	}
 
 	@PutMapping

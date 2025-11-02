@@ -120,6 +120,28 @@ class ApplicationsControllerTest {
     }
 
     @Test
+    void testCreateApplication_invalidInput() {
+        when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
+                .thenReturn(Optional.of("user123"));
+
+        when(applicationService.createApplication(eq("My App"), eq("Test description"), eq("user123")))
+                .thenThrow(new IllegalArgumentException("Invalid input"));
+
+        try {
+            mockMvc.perform(post("/portal/operation/application")
+                            .with(csrf())
+                            .with(user("user123").roles("DEVELOPER"))
+                            .param("applicationName", "My App")
+                            .param("description", "Test description"))
+                    .andExpect(status().is(302))
+                    .andExpect(redirectedUrl("/portal/applications"))
+                    .andExpect(flash().attribute("error", "Application creation failed"));
+        } catch (Exception e) {
+            fail("Encountered exception when creating an application: " + e.getMessage());
+        }
+    }
+
+    @Test
     void testCreateApplication_failure() {
         when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
                 .thenReturn(Optional.of("user123"));
