@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -58,7 +59,7 @@ class ScopeServiceImplTest {
 	@Test
 	void testCreateScope_duplicateNameExists() {
 		when(scopeRepository.findByName("urn:cb:scope:existing"))
-				.thenReturn(java.util.Optional.of(new Scope("scope123", "urn:cb:scope:existing", "app123")));
+				.thenReturn(Optional.of(new Scope("scope123", "urn:cb:scope:existing", "app123")));
 
 		assertThrows(IllegalArgumentException.class, () -> scopeService.createScope("urn:cb:scope:existing", "app123"));
 	}
@@ -79,7 +80,7 @@ class ScopeServiceImplTest {
 						new Scope("scope2", "urn:cb:scope:two", "app123")
 				)));
 
-		java.util.List<Scope> scopes = scopeService.getScopesByApplicationId("app123");
+		List<Scope> scopes = scopeService.getScopesByApplicationId("app123");
 		assertNotNull(scopes);
 		assertEquals(2, scopes.size());
 	}
