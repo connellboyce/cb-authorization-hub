@@ -21,16 +21,18 @@ public class ApplicationServiceImpl implements ApplicationService {
 	private UserService userService;
 
 	@Override
-	public Application createApplication(String name, String description, String ownerId) {
-		if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
-			return null;
+	public Application createApplication(String name, String description, String ownerId) throws IllegalArgumentException {
+		if (name == null || name.isEmpty()) {
+			throw new IllegalArgumentException("Application name is required");
+		}
+		if (description == null || description.isEmpty()) {
+			throw new IllegalArgumentException("Application name is required");
 		}
 		if (applicationRepository.findByName(name).isPresent()) {
-			//TODO throw exceptions instead
-			return null;
+			throw new IllegalArgumentException("Application name " + name + " already exists");
 		}
-		if (ownerId != null && !ownerId.isEmpty() && applicationRepository.findByOwnerId(ownerId).isEmpty()) {
-			return null;
+		if (ownerId == null || ownerId.isEmpty()) {
+			throw new IllegalArgumentException("Owner ID is required");
 		}
 		return applicationRepository.save(new Application(String.valueOf(UUID.randomUUID()), name, description, ownerId));
 	}
@@ -68,9 +70,6 @@ public class ApplicationServiceImpl implements ApplicationService {
 			return false;
 		}
 		if (application.getOwnerId() == null || application.getOwnerId().isEmpty()) {
-			return false;
-		}
-		if (user.getId() == null || user.getId().isEmpty()) {
 			return false;
 		}
 

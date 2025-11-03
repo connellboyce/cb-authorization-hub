@@ -1,8 +1,12 @@
 package com.connellboyce.authhub.service;
 
+import com.connellboyce.authhub.model.dao.Application;
+import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.model.dao.MongoRegisteredClient;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -11,15 +15,20 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-@Service
+@Service("clientService")
 public class ClientServiceImpl implements ClientService {
+
 	@Autowired
 	private MongoRegisteredClientRepository repository;
+
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private UserService userService;
+
 	@Override
 	public MongoRegisteredClient createClient(RegisteredClient registeredClient, String ownerId) {
 		MongoRegisteredClient mongoClient = new MongoRegisteredClient();
@@ -65,5 +74,25 @@ public class ClientServiceImpl implements ClientService {
 		client.setRedirectUris(new HashSet<>(redirectUris));
 		client.setScopes(new HashSet<>(scopes));
 		return repository.save(client);
+	}
+
+	@Override
+	public boolean validateClientOwnership(Authentication authentication, String clientId) {
+		if (authentication == null || clientId == null || clientId.isEmpty()) {
+			return false;
+		}
+		CBUser user = userService.getCBUserByUsername(((UserDetails) authentication.getPrincipal()).getUsername());
+		MongoRegisteredClient client = getClientByClientId(clientId);
+		if (client == null || user == null) {
+			return false;
+		}
+		if (client.getOwnerId() == null || client.getOwnerId().isEmpty()) {
+			return false;
+		}
+		if (user.getId() == null || user.getId().isEmpty()) {
+			return false;
+		}
+
+		return client.getOwnerId().equals(user.getId());
 	}
 }

@@ -4,6 +4,6 @@ import com.connellboyce.authhub.model.dao.CBUser;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public interface UserService {
-	UserDetails createUser(String username, String password, String email, String firstName, String lastName);
+	UserDetails createUser(String username, String password, String email, String firstName, String lastName) throws IllegalArgumentException;
 	CBUser getCBUserByUsername(String username);
 }

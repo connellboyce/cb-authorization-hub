@@ -30,16 +30,22 @@ public class ApplicationsController {
 			return "redirect:/portal/applications";
 		}
 
-		Application result = applicationService.createApplication(name, description, userId.get());
-		if (result != null) {
-			redirectAttributes.addFlashAttribute("success", "Application created successfully!");
-		} else {
+		try {
+			Application result = applicationService.createApplication(name, description, userId.get());
+			if (result != null) {
+				redirectAttributes.addFlashAttribute("success", "Application created successfully!");
+			} else {
+				redirectAttributes.addFlashAttribute("error", "Application creation failed");
+			}
+			return "redirect:/portal/applications";
+		} catch (IllegalArgumentException e) {
 			redirectAttributes.addFlashAttribute("error", "Application creation failed");
+			return "redirect:/portal/applications";
 		}
-		return "redirect:/portal/applications";
 	}
 
 	@PutMapping
+	@PreAuthorize("@applicationService.validateApplicationOwnership(authentication, #id)")
 	public String updateApplication(@RequestParam("id") String id, @RequestParam("applicationName") String name, @RequestParam("description") String description, Authentication authentication, RedirectAttributes redirectAttributes) {
 		Optional<String> userId = authUtilService.getUserIdFromAuthentication(authentication);
 		if (userId.isEmpty()) {

@@ -20,7 +20,8 @@ public class OidcUserInfoConfig {
 			Authentication principal = context.getAuthentication();
 			CBUser user = userService.getCBUserByUsername(principal.getName());
 			return new OidcUserInfo(Map.of(
-					"sub", user.getUsername(),
+					"sub", user.getId(),
+					"username", user.getUsername(),
 					"name", user.getFirstName() + " " + user.getLastName(),
 					"email", user.getEmail(),
 					"preferred_username", user.getUsername(),

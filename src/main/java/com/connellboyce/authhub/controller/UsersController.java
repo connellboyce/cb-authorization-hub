@@ -18,13 +18,18 @@ public class UsersController {
 
 	@PostMapping
 	public ResponseEntity<?> createUser(@RequestBody CreateUserRequest createUserRequest) {
-		UserDetails result = userService.createUser(
-				createUserRequest.getUsername(),
-				createUserRequest.getPassword(),
-				createUserRequest.getEmail(),
-				createUserRequest.getFirstName(),
-				createUserRequest.getLastName()
-		);
-		return result == null ? ResponseEntity.badRequest().body("User creation failed") : ResponseEntity.ok(result);
+		try {
+			UserDetails result = userService.createUser(
+					createUserRequest.getUsername(),
+					createUserRequest.getPassword(),
+					createUserRequest.getEmail(),
+					createUserRequest.getFirstName(),
+					createUserRequest.getLastName()
+			);
+
+			return result == null ? ResponseEntity.internalServerError().body("User creation failed") : ResponseEntity.ok(result);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
 	}
 }

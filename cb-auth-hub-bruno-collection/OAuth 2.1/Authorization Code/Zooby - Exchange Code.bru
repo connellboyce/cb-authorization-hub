@@ -1,0 +1,19 @@
+meta {
+  name: Zooby - Exchange Code
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: authorization_code
+  redirect_uri: https://7qdnizqzpi.us-east-1.awsapprunner.com/api/auth/callback/connellboyce
+  code: h1Iv7oDHFQWPY4xkTvpI-e7l6z2ivbezoCjGtes9IoUJFTjyn_hM27R7mYkd5Uov2t9eqc2tLfafhxPdYsc4S-wcsCaMY4BAOr3Fo0n1w5gHi4Vu71u2PO1YA3Uthfr5
+  client_id: zooby
+  client_secret: {{oauth.client-secret.zooby}}
+}

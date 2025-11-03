@@ -1,12 +1,12 @@
 package com.connellboyce.authhub.controller;
 
-import com.connellboyce.authhub.model.payload.request.CreateClientRequest;
+import com.connellboyce.authhub.model.dao.MongoRegisteredClient;
 import com.connellboyce.authhub.service.AuthUtilService;
 import com.connellboyce.authhub.service.ClientService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Controller;
@@ -15,7 +15,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.connellboyce.authhub.model.payload.request.CreateClientRequest.toRegisteredClient;
 
@@ -41,26 +40,37 @@ public class ClientsController {
 		RegisteredClient createdClient = toRegisteredClient(clientId, clientSecret, redirectUrls, scopes, grantTypes);
 
 		LOGGER.debug("Creating client with ID: {}", createdClient.getClientId());
-		clientService.createClient(createdClient, userId.get());
-
-		redirectAttributes.addFlashAttribute("success", "Client created successfully!");
+		MongoRegisteredClient client = clientService.createClient(createdClient, userId.get());
+		if (client != null) {
+			redirectAttributes.addFlashAttribute("success", "Client created successfully!");
+		} else {
+			redirectAttributes.addFlashAttribute("error", "Failed to create client");
+		}
 		return "redirect:/portal/clients";
 	}
 
-	@PutMapping("/{clientId}")
-	public String updateClient(@PathVariable("clientId") String clientId, @RequestParam List<String> grantTypes, @RequestParam List<String> redirectUrls, @RequestParam List<String> scopes, Authentication authentication, RedirectAttributes redirectAttributes) {
+	@PutMapping
+	@PreAuthorize("@clientService.validateClientOwnership(authentication, #clientId)")
+	public String updateClient(@RequestParam("clientId") String clientId, @RequestParam List<String> grantTypes, @RequestParam List<String> redirectUrls, @RequestParam List<String> scopes, Authentication authentication, RedirectAttributes redirectAttributes) {
+		Optional<String> userId = authUtilService.getUserIdFromAuthentication(authentication);
+		if (userId.isEmpty()) {
+			redirectAttributes.addFlashAttribute("error", "User not authenticated");
+			return "redirect:/portal/clients";
+		}
+
 		try {
 			clientService.updateClient(clientId, grantTypes, redirectUrls, scopes);
 			redirectAttributes.addFlashAttribute("success", "Client updated successfully!");
 		} catch (Exception e) {
 			LOGGER.error("Error updating client: {}", e.getMessage());
-			redirectAttributes.addFlashAttribute("error", e.getMessage());
+			redirectAttributes.addFlashAttribute("error", "Failed to update client");
 			return "redirect:/portal/clients";
 		}
 		return "redirect:/portal/clients";
 	}
 
 	@DeleteMapping("/{clientId}")
+	@PreAuthorize("@clientService.validateClientOwnership(authentication, #clientId)")
 	public String deleteClient(@PathVariable("clientId") String clientId, Authentication authentication, RedirectAttributes redirectAttributes) {
 		clientService.deleteByClientId(clientId);
 		redirectAttributes.addFlashAttribute("success", "Client deleted successfully!");
