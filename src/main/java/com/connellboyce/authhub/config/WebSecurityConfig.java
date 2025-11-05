@@ -1,7 +1,6 @@
 package com.connellboyce.authhub.config;
 
 import com.connellboyce.authhub.filter.AuthorizationRequestFilter;
-import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
 import com.connellboyce.authhub.service.UserDetailsServiceImpl;
@@ -172,9 +171,9 @@ public class WebSecurityConfig {
 				if (principal.getPrincipal() instanceof User user) {
 					context.getClaims().subject(userService.getCBUserByUsername(principal.getName()).getId());
 					context.getClaims().claim("username", user.getUsername());
+					context.getClaims().claim("amr", Set.of("pwd"));
 				}
 				context.getClaims().claim("azp", context.getRegisteredClient().getClientId());
-				context.getClaims().claim("amr", Set.of("pwd"));
 			}
 		};
 	}
