@@ -1,6 +1,5 @@
 package com.connellboyce.authhub.model.dao;
 
-import com.connellboyce.authhub.util.CBRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.data.annotation.Id;

@@ -1,6 +1,5 @@
 package com.connellboyce.authhub.service;
 
-import com.connellboyce.authhub.model.dao.Application;
 import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.model.dao.MongoRegisteredClient;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;

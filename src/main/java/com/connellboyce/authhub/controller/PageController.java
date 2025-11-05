@@ -1,6 +1,5 @@
 package com.connellboyce.authhub.controller;
 
-import com.connellboyce.authhub.model.dao.Application;
 import com.connellboyce.authhub.model.dao.Scope;
 import com.connellboyce.authhub.service.ApplicationService;
 import com.connellboyce.authhub.service.ClientService;
