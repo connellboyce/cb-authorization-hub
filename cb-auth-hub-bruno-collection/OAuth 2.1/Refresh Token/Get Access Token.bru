@@ -1,0 +1,23 @@
+meta {
+  name: Get Access Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: inherit
+}
+
+body:form-urlencoded {
+  grant_type: refresh_token
+  refresh_token: 4NMhRuudHplUTxb4t4PmTgIGcpCYgb9aNxACgUuDQD9VCQvTZNiG4eSzOvHdrIjuPPmLuozLUa4xpnKS-NqJ2a13Jjn1oI8Jh9ONVVltnBg-RW4SjfSzfpIo9BbTjm--
+  client_id: {{oauth.client-id}}
+  client_secret: {{oauth.client-secret}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
