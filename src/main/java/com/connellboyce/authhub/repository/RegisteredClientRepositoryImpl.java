@@ -6,6 +6,9 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
+import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+
+import java.time.Duration;
 
 public class RegisteredClientRepositoryImpl implements RegisteredClientRepository {
 
@@ -43,6 +46,11 @@ public class RegisteredClientRepositoryImpl implements RegisteredClientRepositor
 				.redirectUris(uris -> uris.addAll(mongoClient.getRedirectUris()))
 				.scopes(scopes -> scopes.addAll(mongoClient.getScopes()))
 				.clientSettings(ClientSettings.builder().requireAuthorizationConsent(mongoClient.isRequireAuthorizationConsent()).build())
+				.tokenSettings(TokenSettings.builder()
+						.accessTokenTimeToLive(Duration.ofHours(1))
+						.refreshTokenTimeToLive(Duration.ofDays(30))
+						.reuseRefreshTokens(false)
+						.build())
 				.build();
 	}
 }
