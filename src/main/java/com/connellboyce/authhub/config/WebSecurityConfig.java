@@ -1,6 +1,7 @@
 package com.connellboyce.authhub.config;
 
 import com.connellboyce.authhub.filter.AuthorizationRequestFilter;
+import com.connellboyce.authhub.grant.TokenExchangeAuthenticationProvider;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
 import com.connellboyce.authhub.service.UserDetailsServiceImpl;
@@ -25,14 +26,19 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2TokenExchangeAuthenticationProvider;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.server.authorization.token.*;
+import org.springframework.security.oauth2.server.authorization.web.authentication.OAuth2TokenExchangeAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -58,13 +64,26 @@ public class WebSecurityConfig {
 
 	@Bean
 	@Order(1)
-	SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http, Function<OidcUserInfoAuthenticationContext, OidcUserInfo> oidcUserInfoMapper)
+	SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
+	                                                           Function<OidcUserInfoAuthenticationContext, OidcUserInfo> oidcUserInfoMapper,
+	                                                           OAuth2AuthorizationService authorizationService,
+	                                                           OAuth2TokenGenerator<?> tokenGenerator,
+	                                                           JWKSource<SecurityContext> jwkSource,
+	                                                           RegisteredClientRepository registeredClientRepository)
 			throws Exception {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
 				.oidc((oidc) -> oidc
 						.userInfoEndpoint((userInfo) -> userInfo
 								.userInfoMapper(oidcUserInfoMapper)
+						)
+				)
+				.tokenEndpoint(tokenEndpoint -> tokenEndpoint
+						.accessTokenRequestConverters(converters ->
+								converters.add(new OAuth2TokenExchangeAuthenticationConverter())
+						)
+						.authenticationProviders(providers ->
+								providers.add(0, new TokenExchangeAuthenticationProvider(jwtDecoder(jwkSource), authorizationService, tokenGenerator, registeredClientRepository))
 						)
 				);
 		http
@@ -181,5 +200,22 @@ public class WebSecurityConfig {
 	@Bean
 	public HiddenHttpMethodFilter hiddenHttpMethodFilter() {
 		return new HiddenHttpMethodFilter();
+	}
+
+	@Bean
+	public OAuth2AuthorizationService authorizationService() {
+		return new InMemoryOAuth2AuthorizationService();
+	}
+
+	@Bean
+	public OAuth2TokenGenerator<?> tokenGenerator(JWKSource<SecurityContext> jwkSource, OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer) {
+		JwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
+		JwtGenerator jwtGenerator = new JwtGenerator(jwtEncoder);
+		jwtGenerator.setJwtCustomizer(tokenCustomizer);
+
+		OAuth2AccessTokenGenerator accessTokenGenerator = new OAuth2AccessTokenGenerator();
+		OAuth2RefreshTokenGenerator refreshTokenGenerator = new OAuth2RefreshTokenGenerator();
+
+		return new DelegatingOAuth2TokenGenerator(jwtGenerator, accessTokenGenerator, refreshTokenGenerator);
 	}
 }
