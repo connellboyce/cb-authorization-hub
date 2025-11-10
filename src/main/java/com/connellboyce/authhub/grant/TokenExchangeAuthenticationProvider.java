@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.server.authorization.context.Authoriz
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.token.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -89,7 +90,6 @@ public class TokenExchangeAuthenticationProvider implements AuthenticationProvid
 			throw new OAuth2AuthenticationException("Invalid client authentication");
 		}
 
-//		OAuth2TokenContext tokenContext =
 		DefaultOAuth2TokenContext.Builder builder = DefaultOAuth2TokenContext.builder()
 				.authorizationGrantType(new AuthorizationGrantType("urn:ietf:params:oauth:grant-type:token-exchange"))
 				.principal(authentication)
@@ -98,7 +98,7 @@ public class TokenExchangeAuthenticationProvider implements AuthenticationProvid
 				.authorizedScopes(tokenExchangeAuth.getScopes())
 				.authorizationGrant(tokenExchangeAuth)
 				.authorizationServerContext(AuthorizationServerContextHolder.getContext());
-		DefaultOAuth2TokenContext tokenContext = delegateUserLevelClaims(builder, jwt).build();
+		DefaultOAuth2TokenContext tokenContext = builder.build();
 
 
 		OAuth2AccessToken accessToken = toAccessToken(this.tokenGenerator.generate(tokenContext), tokenContext);
@@ -142,23 +142,5 @@ public class TokenExchangeAuthenticationProvider implements AuthenticationProvid
 		}
 
 		throw new IllegalArgumentException("Unsupported token type: " + token.getClass().getName());
-	}
-
-	public DefaultOAuth2TokenContext.Builder delegateUserLevelClaims(DefaultOAuth2TokenContext.Builder builder, OAuth2Token subjectToken) {
-		if(!(subjectToken instanceof Jwt jwt)) {
-			return builder;
-		}
-		Map<String, Object> claims = ((Jwt) subjectToken).getClaims();
-		claims.remove("nbf");
-		claims.remove("iss");
-		claims.remove("exp");
-		claims.remove("iat");
-		claims.remove("jti");
-
-		for (Map.Entry<String, Object> entry : claims.entrySet()) {
-			builder.put(entry.getKey(), entry.getValue());
-		}
-
-		return builder;
 	}
 }

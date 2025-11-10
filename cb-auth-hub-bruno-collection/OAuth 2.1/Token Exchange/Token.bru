@@ -1,0 +1,25 @@
+meta {
+  name: Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: inherit
+}
+
+body:form-urlencoded {
+  grant_type: urn:ietf:params:oauth:grant-type:token-exchange
+  client_id: {{oauth.client-id}}
+  client_secret: {{oauth.client-secret}}
+  subject_token: eyJraWQiOiI3Y2NmZDkxOC1lYjU3LTRkOTEtODhhNy0zYTY5NTgzZmZlMTciLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJlZjY5MWU2ZS05MmRhLTQzZGUtODk2OC1kNjgxNTU4OTA4NDciLCJhdWQiOiJjYmF1dGgtYnJ1bm8iLCJuYmYiOjE3NjI2OTkzODYsInJvbGUiOlsiUk9MRV9ERVZFTE9QRVIiLCJST0xFX1VTRVIiXSwiYXpwIjoiY2JhdXRoLWJydW5vIiwic2NvcGUiOlsib3BlbmlkIiwicHJvZmlsZSIsIm9mZmxpbmVfYWNjZXNzIiwiZW1haWwiXSwiYW1yIjpbInB3ZCJdLCJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjIxMjEiLCJleHAiOjE3NjI3MDI5ODYsImlhdCI6MTc2MjY5OTM4NiwianRpIjoiNDAzZGY2ZTQtODM1Ni00MTNhLWI1NTYtMTk5NDE3NDA1NWFkIiwidXNlcm5hbWUiOiJ0ZXN0dXNlciJ9.Ak6z1436evUYoBmdJgIkGdAJ8m_hHSwUzvYes_PPxVvrm0euIUlg5PteVVd1G4t0wt_csrcCH0ROILHShhLlwyITmZdwdX4SSY6GPMxBoltD2rNmsvggy5c3-EjI8z9Dow-5WYe9MggXDlgfjDmOk08kKwr_qAIw8L1w9a7khdwdJDwo5RPE84P-IDdu6oTMZ9kqXmiNxp5qlu03yqHWMaWyvDpMxEx6flgS2o-fyxw_pacdKoa1KsR7uC4w3ZR4cA0Io8zfm-mnMxmJsjP6YXrMXdIRxeaBocUN3Tgk7Q1xFGOeoeLtrUaFki1iStEVhqyzjd5YmbcLLgPHmhL6pQ
+  subject_token_type: urn:ietf:params:oauth:token-type:access_token
+  scope: openid
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
