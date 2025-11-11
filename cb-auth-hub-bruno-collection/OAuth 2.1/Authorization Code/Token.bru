@@ -1,5 +1,5 @@
 meta {
-  name: Exchange Code
+  name: Token
   type: http
   seq: 2
 }
@@ -12,8 +12,8 @@ post {
 
 body:form-urlencoded {
   grant_type: authorization_code
-  redirect_uri: https://auth.connellboyce.com/callback
-  code: ipJieTe8SmXhg3XB-Z_wP_fzetD2aAU5kGrncBonY6oHmjZoYOUUCpLF3FCqSUjS9XGmqZZLONxNwl5E79CHeNxYHm1ZeInglV56o41PqGMzH99Osah-LVzDLsy-BLS4
+  redirect_uri: http://localhost:2121/callback
+  code: 4rBqYzvomLKSJF9aObIfLfVwc0UF3Kv6iHSo4B7mglKxeM4Z0P9LyEmtGeg7k8J1BRLhPO_uuGPCNXdHYQNpEQJhJMJMvomPeeZOvyuAhveHj_XTttKasptQiDHvtWZW
   client_id: {{oauth.client-id}}
   client_secret: {{oauth.client-secret}}
 }
