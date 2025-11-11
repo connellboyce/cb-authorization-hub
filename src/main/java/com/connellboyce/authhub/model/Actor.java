@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Optional;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "sub", "typ", "act" })
 public class Actor {
@@ -38,6 +36,19 @@ public class Actor {
 			this.act = parsed.act;
 		} catch (JsonProcessingException e) {
 			throw new IllegalArgumentException("Invalid actor string", e);
+		}
+	}
+
+	public static Actor from(Object claim) {
+		if (claim == null) return null;
+		try {
+			if (claim instanceof String s) {
+				return mapper.readValue(s, Actor.class);
+			} else {
+				return mapper.convertValue(claim, Actor.class);
+			}
+		} catch (JsonProcessingException e) {
+			throw new IllegalArgumentException("Invalid actor claim", e);
 		}
 	}
 

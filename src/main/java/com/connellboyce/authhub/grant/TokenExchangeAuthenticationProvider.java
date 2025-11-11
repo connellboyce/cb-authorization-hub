@@ -1,25 +1,32 @@
 package com.connellboyce.authhub.grant;
 
-import com.connellboyce.authhub.model.dao.MongoRegisteredClient;
-import com.connellboyce.authhub.service.ClientService;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.core.*;
-import org.springframework.security.oauth2.jwt.*;
-import org.springframework.security.oauth2.server.authorization.*;
-import org.springframework.security.oauth2.server.authorization.authentication.*;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2TokenExchangeAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
-import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
-import org.springframework.security.oauth2.server.authorization.token.*;
+import org.springframework.security.oauth2.server.authorization.token.DefaultOAuth2TokenContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
+/**
+ * OAuth 2.0 Token Exchange: RFC 8693
+ * An {@link AuthenticationProvider} that handles token exchange requests.
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc8693">RFC 8693</a>
+ */
 public class TokenExchangeAuthenticationProvider implements AuthenticationProvider {
 	private final JwtDecoder jwtDecoder;
 	private final OAuth2AuthorizationService authorizationService;

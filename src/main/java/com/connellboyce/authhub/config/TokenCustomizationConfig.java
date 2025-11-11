@@ -4,6 +4,8 @@ import com.connellboyce.authhub.grant.TokenType;
 import com.connellboyce.authhub.model.Actor;
 import com.connellboyce.authhub.model.ActorType;
 import com.connellboyce.authhub.service.UserService;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +24,6 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -75,15 +76,20 @@ public class TokenCustomizationConfig {
 				delegateClaimIfNotNull(subjectTokenClaims, context, "role");
 
 				Object existingActorsClaim = subjectTokenClaims.get("act");
-				Actor existingActor = null;
-				if (existingActorsClaim instanceof String) {
-					existingActor = new Actor((String) existingActorsClaim);
-				}
+				Actor existingActor = Actor.from(existingActorsClaim);
 
-				context.getClaims().claim("act",
-						new Actor(context.getRegisteredClient().getClientId(),
-								ActorType.SERVICE,
-								existingActor));
+				Actor actor = new Actor(
+						context.getRegisteredClient().getClientId(),
+						ActorType.SERVICE,
+						existingActor
+				);
+
+				ObjectMapper mapper = new ObjectMapper()
+						.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+				Map<String, Object> actorMap = mapper.convertValue(actor, Map.class);
+
+				context.getClaims().claim("act", actorMap);
 			}
 		};
 	}
