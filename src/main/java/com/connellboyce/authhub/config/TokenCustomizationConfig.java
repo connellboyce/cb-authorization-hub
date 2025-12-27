@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.core.*;
+import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -49,6 +50,15 @@ public class TokenCustomizationConfig {
 				}
 				context.getClaims().claim("azp", context.getRegisteredClient().getClientId());
 			}
+			if (OidcParameterNames.ID_TOKEN.equals(context.getTokenType().getValue())) {
+				context.getClaims().subject(userService.getCBUserByUsername(principal.getName()).getId());
+				context.getClaims().claim("username", principal.getName());
+				context.getClaims().claim("amr", Set.of("pwd"));
+				Set<String> authorities = principal.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+						.collect(Collectors.toSet());
+				context.getClaims().claim("role", authorities);
+			}
+
 			if (Objects.equals(AuthorizationGrantType.TOKEN_EXCHANGE.getValue(), context.getAuthorizationGrantType().getValue())) {
 				OAuth2TokenExchangeAuthenticationToken tokenExchangeGrant = context.getAuthorizationGrant();
 				String subjectToken = tokenExchangeGrant.getSubjectToken();
