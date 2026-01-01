@@ -89,7 +89,7 @@ public class TokenCustomizationConfig {
 				Actor existingActor = Actor.from(existingActorsClaim);
 
 				Actor actor = new Actor(
-						context.getRegisteredClient().getClientId(),
+						subjectTokenClaims.get("azp").toString(),
 						ActorType.SERVICE,
 						existingActor
 				);

@@ -137,13 +137,11 @@ public class PageController {
 	}
 
 	private String generateSecret() {
-		try {
-			SecureRandom random = SecureRandom.getInstanceStrong();
-			byte[] values = new byte[32];
-			random.nextBytes(values);
-			return Base64.getEncoder().encodeToString(values);
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException("Failed to generate secure random value:", e);
-		}
+		byte[] values = new byte[32];
+		SecureRandom random = new SecureRandom();
+		random.nextBytes(values);
+		return Base64.getUrlEncoder()
+				.withoutPadding()
+				.encodeToString(values);
 	}
 }
