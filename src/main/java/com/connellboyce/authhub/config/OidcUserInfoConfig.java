@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -18,7 +19,14 @@ public class OidcUserInfoConfig {
 	public Function<OidcUserInfoAuthenticationContext, OidcUserInfo> oidcUserInfoMapper(UserService userService) {
 		return (context) -> {
 			Authentication principal = context.getAuthentication();
-			CBUser user = userService.getCBUserByUsername(principal.getName());
+			if (!(principal.getPrincipal() instanceof JwtAuthenticationToken)) {
+				return new OidcUserInfo(Map.of());
+			}
+			String username = ((JwtAuthenticationToken) principal.getPrincipal()).getToken().getClaimAsString("username");
+			if (username == null || username.isEmpty()) {
+				return new OidcUserInfo(Map.of());
+			}
+			CBUser user = userService.getCBUserByUsername(username);
 			return new OidcUserInfo(Map.of(
 					"sub", user.getId(),
 					"username", user.getUsername(),
