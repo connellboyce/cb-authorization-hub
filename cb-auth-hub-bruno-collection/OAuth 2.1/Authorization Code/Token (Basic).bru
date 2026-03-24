@@ -1,0 +1,22 @@
+meta {
+  name: Token (Basic)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: basic
+}
+
+auth:basic {
+  username: {{oauth.client-id.authentik}}
+  password: {{oauth.client-secret.authentik}}
+}
+
+body:form-urlencoded {
+  grant_type: authorization_code
+  redirect_uri: http://localhost:2121/callback
+  code: fzzEwX5hyYknnKgfjv0lZlsUqp-_nLge4u9Js1VghJ1btf-IGqTlgTZ9Wq_Tis4TvzXn4efJQwKYFhVsea03bYNyr3TI7YMOBCUy5PaKVtf6ucsMWGQOPiSDwKPVIoSd
+}

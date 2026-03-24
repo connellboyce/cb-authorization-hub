@@ -1,0 +1,27 @@
+meta {
+  name: Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: inherit
+}
+
+body:form-urlencoded {
+  grant_type: urn:ietf:params:oauth:grant-type:device_code
+  device_code: Bfc8kGUwaTVJViSyLkFK7_slVtAiEh8DsspuyGWIc1b4vkGJ-qVybN1-AoCPhClqLjGMIiK-bAywDTQN4g3qYUN6meIouz_67SYc6ld23OGGsblnk8V7UBoj3z1cl5HC
+  client_id: {{oauth.client-id}}
+  client_secret: {{oauth.client-secret}}
+}
+
+body:multipart-form {
+  : 
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

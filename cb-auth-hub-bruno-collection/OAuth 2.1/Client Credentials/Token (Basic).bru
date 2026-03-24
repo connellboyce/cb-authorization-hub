@@ -1,0 +1,25 @@
+meta {
+  name: Token (Basic)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{oauth.base-url}}/oauth2/token
+  body: formUrlEncoded
+  auth: basic
+}
+
+headers {
+  Content-Type: application/x-www-form-urlencoded
+}
+
+auth:basic {
+  username: {{oauth.client-id}}
+  password: {{oauth.client-secret}}
+}
+
+body:form-urlencoded {
+  grant_type: client_credentials
+  scope: openid profile offline_access
+}

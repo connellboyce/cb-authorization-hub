@@ -1,5 +1,6 @@
 package com.connellboyce.authhub.controller;
 
+import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.model.dao.Scope;
 import com.connellboyce.authhub.service.ApplicationService;
 import com.connellboyce.authhub.service.ClientService;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -134,6 +137,20 @@ public class PageController {
 		model.addAttribute("scopesByApplication", scopeMap);
 
 		return "portal/edit-client";
+	}
+
+	@GetMapping("/")
+	public RedirectView homePage(RedirectAttributes attributes) {
+		return new RedirectView("/identity");
+	}
+
+	@GetMapping("/identity")
+	public String identityPage(Model model, Authentication authentication) {
+		CBUser user = userService.getCBUserByUsername(((UserDetails) authentication.getPrincipal()).getUsername());
+		model.addAttribute("fullName", user.getFirstName() + " " + user.getLastName());
+		model.addAttribute("email", user.getEmail());
+		model.addAttribute("isDeveloper", user.getRoles().contains("DEVELOPER"));
+		return "identity/home";
 	}
 
 	private String generateSecret() {

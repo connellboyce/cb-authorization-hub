@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+    <head>
+        <title>Identity Portal</title>
+        <link rel="stylesheet" th:href="@{/css/style.css}">
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="text-white mx-28">
+        <h1 class="my-16 text-5xl font-bold">Identity<span class="text-[#f9004d]">Portal</span></h1>
+        <div class="grid grid-cols-6">
+            <div class="grid grid-cols-1 gap-4">
+                <div class="text-2xl bg-neutral-900 rounded-full hover:bg-neutral-700 cursor-pointer h-12">
+                    <p class="mx-3 my-2">personal info</p>
+                </div>
+                <div class="text-2xl bg-neutral-900 rounded-full hover:bg-neutral-700 cursor-pointer h-12">
+                    <p class="mx-3 my-2">security & sign-in</p>
+                </div>
+                <div class="text-2xl bg-neutral-900 rounded-full hover:bg-neutral-700 cursor-pointer h-12">
+                    <p class="mx-3 my-2">roles & access control</p>
+                </div>
+                <a th:if="${isDeveloper}" href="/portal/index" class="text-2xl bg-neutral-900 rounded-full hover:bg-neutral-700 cursor-pointer h-12">
+                    <p class="mx-3 my-2">developer portal</p>
+                </a>
+            </div>
+            <div class="text-center col-span-5">
+                <div id="personal">
+                    <img th:src="@{/images/default_pfp.jpg}" class="rounded-full h-24 w-24 mx-auto"/>
+                    <h2 class="text-3xl" th:text="${fullName}"></h2>
+                    <h3 class="text-2xl text-[#fcfc]" th:text="${email}"></h3>
+                </div>
+                <div id="security">
+                    <div id="password-section">
+                        <div id="view-pwd" class="grid grid-cols-3">
+                            <p class="font-bold">Password</p>
+                            <p>*******************</p>
+                            <button class="col-span-2 bg-[#f9004d] rounded-xl w-fit">Change Password</button>
+                        </div>
+                        <div id="edit-pwd" class="grid grid-cols-2">
+                            <label for="password" class="align-self-right">Old Password</label>
+                            <input id="password" name="password" type="password" class="border border-gray-600 placeholder-slate-500 text-black mb-2 w-1/3 rounded-lg p-1"/>
+                            <label for="new-password">New Password</label>
+                            <input id="new-password" name="new-password" type="password" class="border border-gray-600 placeholder-slate-500 text-black mb-2 w-1/3 rounded-lg p-1"/>
+                            <label for="password">Confirm New Password</label>
+                            <input id="confirm-password" name="confirm-password" type="password" class="border border-gray-600 placeholder-slate-500 text-black mb-2 w-1/3 rounded-lg p-1"/>
+                            <button class="bg-[#f9004d] rounded-xl">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

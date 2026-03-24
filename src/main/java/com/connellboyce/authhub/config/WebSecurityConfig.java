@@ -121,6 +121,8 @@ public class WebSecurityConfig {
 						.requestMatchers("/login").permitAll()
 						.requestMatchers("/portal/**").hasRole("DEVELOPER")
 						.requestMatchers("/portal").hasRole("DEVELOPER")
+						.requestMatchers("/identity").hasRole("USER")
+						.requestMatchers("/identity/**").hasRole("USER")
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
 				.userDetailsService(userDetailsService)
