@@ -14,6 +14,7 @@ jobs:
     outputs:
       release_version: ${{ steps.set-version.outputs.release_version }}
       release_branch: ${{ steps.set-version.outputs.release_branch }}
+      previous_release_tag: ${{ steps.previous-tag.outputs.previous_release_tag }}
 
     steps:
       - name: Checkout
@@ -24,6 +25,14 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+
+      - name: Determine previous release tag
+        id: previous-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PREVIOUS_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty')
+          echo "previous_release_tag=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
 
       - name: Calculate and set release version
         id: set-version
@@ -63,6 +72,7 @@ jobs:
           tag_name: v${{ needs.prepare-release.outputs.release_version }}
           name: Release v${{ needs.prepare-release.outputs.release_version }}
           generate_release_notes: true
+          previous_tag: ${{ needs.prepare-release.outputs.previous_release_tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
