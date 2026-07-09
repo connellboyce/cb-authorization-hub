@@ -1,4 +1,4 @@
-package com.connellboyce.authhub.grants;
+package com.connellboyce.authhub.tokengrantflows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -208,12 +208,6 @@ public class RefreshTokenTests {
 				.andExpect(jsonPath("$.refresh_token").exists());
 	}
 
-	// --- Client authentication method enforcement ---
-	// A client registered for only one of client_secret_basic/client_secret_post
-	// must be rejected when it attempts the other. See ClientCredentialsTests for
-	// the production defect (a misplaced custom AuthenticationProvider) that used
-	// to silently bypass this check for every grant type.
-
 	@Test
 	void testRefreshToken_basic_whenClientOnlyAllowsPost_shouldFail() throws Exception {
 		String postOnlyClientId = "post-only-refresh-client";
@@ -283,9 +277,6 @@ public class RefreshTokenTests {
 		Mockito.when(registeredClientRepository.findByClientId(noRefreshGrantClientId))
 				.thenReturn(mockClient);
 
-		// The refresh token must resolve to a real authorization owned by this same
-		// client, otherwise the provider fails on the token/ownership check before it
-		// ever reaches the "does this client support refresh_token" check.
 		OAuth2RefreshToken refreshToken = new OAuth2RefreshToken(
 				"no-grant-refresh-token",
 				Instant.now().minusSeconds(60),

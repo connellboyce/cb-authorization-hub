@@ -1,10 +1,8 @@
-package com.connellboyce.authhub.grants;
+package com.connellboyce.authhub.tokengrantflows;
 
-import com.connellboyce.authhub.grant.TokenType;
 import com.connellboyce.authhub.model.ActorType;
 import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.service.UserService;
-import com.nimbusds.jose.util.ArrayUtils;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +24,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -279,8 +276,6 @@ public class TokenExchangeTests {
 		assertEquals(TEST_CLIENT_ID, ((Map<String, Object>) claims.get("act")).get("sub"), "Actor claim should contain client ID of the exchanging client");
 	}
 
-	// --- Client authentication method enforcement ---
-
 	@Test
 	void testTokenExchange_basic_whenClientOnlyAllowsPost_shouldFail() throws Exception {
 		String postOnlyClientId = "post-only-exchange-client";
@@ -311,10 +306,6 @@ public class TokenExchangeTests {
 				.andExpect(jsonPath("$.access_token").doesNotExist())
 				.andExpect(jsonPath("$.error").value("invalid_client"));
 	}
-
-	// --- Client grant-type enforcement ---
-	// A client not registered for the token-exchange grant must be rejected, even
-	// with a valid subject token and correct credentials.
 
 	@Test
 	void testTokenExchange_clientWithoutGrantType_shouldFail() throws Exception {
@@ -395,8 +386,6 @@ public class TokenExchangeTests {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.access_token").exists())
 				.andExpect(jsonPath("$.id_token").doesNotExist())
-//					TODO: Update refresh token logic
-//					.andExpect(jsonPath("$.refresh_token").doesNotExist())
 				.andExpect(jsonPath("$.scope").value("profile"))
 				.andExpect(jsonPath("$.token_type").value("Bearer"))
 				.andExpect(jsonPath("$.expires_in").isNumber())

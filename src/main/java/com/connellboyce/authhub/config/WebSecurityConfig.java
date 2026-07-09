@@ -88,10 +88,6 @@ public class WebSecurityConfig {
 								converters.add(new OAuth2TokenExchangeAuthenticationConverter())
 						)
 						.authenticationProviders(providers -> {
-									// This app's TokenExchangeAuthenticationProvider fully replaces Spring's
-									// default OAuth2TokenExchangeAuthenticationProvider (auto-registered by
-									// OAuth2TokenEndpointConfigurer) -- remove it so only the custom
-									// implementation ever handles token-exchange grants.
 									providers.removeIf(OAuth2TokenExchangeAuthenticationProvider.class::isInstance);
 									providers.add(0, new TokenExchangeAuthenticationProvider(jwtDecoder(jwkSource), authorizationService, tokenGenerator, registeredClientRepository));
 								}

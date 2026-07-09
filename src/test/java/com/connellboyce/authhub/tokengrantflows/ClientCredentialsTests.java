@@ -1,4 +1,4 @@
-package com.connellboyce.authhub.grants;
+package com.connellboyce.authhub.tokengrantflows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -374,12 +374,6 @@ public class ClientCredentialsTests {
 		}
 	}
 
-	// --- Client authentication method enforcement ---
-	// Spring's ClientSecretAuthenticationProvider must reject a client authenticating
-	// with a method it isn't registered for (RFC 6749 3.2.1). A previous production
-	// defect (a misplaced custom AuthenticationProvider) silently bypassed this check
-	// for every client regardless of its registered ClientAuthenticationMethod.
-
 	@Test
 	void testClientCredentials_basic_whenClientOnlyAllowsPost_shouldFail() {
 		String postOnlyClientId = "post-only-client";
@@ -475,8 +469,6 @@ public class ClientCredentialsTests {
 			fail("Exception during test execution: " + e.getMessage());
 		}
 	}
-
-	// --- Malformed HTTP Basic Authorization header handling ---
 
 	@Test
 	void testClientCredentials_basic_malformedBase64_shouldFail() {

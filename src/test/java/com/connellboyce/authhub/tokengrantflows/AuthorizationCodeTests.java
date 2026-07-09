@@ -1,4 +1,4 @@
-package com.connellboyce.authhub.grants;
+package com.connellboyce.authhub.tokengrantflows;
 
 import com.connellboyce.authhub.model.dao.CBUser;
 import com.connellboyce.authhub.service.UserService;
@@ -230,8 +230,6 @@ public class AuthorizationCodeTests {
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$.access_token").exists())
 					.andExpect(jsonPath("$.id_token").doesNotExist())
-//					TODO: Update refresh token logic
-//					.andExpect(jsonPath("$.refresh_token").doesNotExist())
 					.andExpect(jsonPath("$.scope").value(TEST_SCOPE))
 					.andExpect(jsonPath("$.token_type").value("Bearer"))
 					.andExpect(jsonPath("$.expires_in").isNumber());

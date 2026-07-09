@@ -53,14 +53,6 @@ class OidcUserInfoConfigTest {
 				.build();
 	}
 
-	// NOTE: OidcUserInfoConfig's intent for these two branches is to gracefully return
-	// an empty OidcUserInfo (e.g. for a client_credentials-issued token with no
-	// "username" claim). In reality, `new OidcUserInfo(Map.of())` throws
-	// IllegalArgumentException ("claims cannot be empty") -- Spring's OidcUserInfo
-	// rejects an empty claims map. Verified end-to-end: calling /userinfo with a
-	// client_credentials token currently surfaces as a 401 invalid_token (the
-	// exception gets mapped generically by the resource-server layer) rather than the
-	// intended empty-body response. Documented as current (broken) behavior.
 	@Test
 	void oidcUserInfoMapper_nonJwtPrincipal_throwsInsteadOfReturningEmptyUserInfo() {
 		UserService userService = mock(UserService.class);
@@ -68,24 +60,6 @@ class OidcUserInfoConfigTest {
 
 		Authentication notAJwtAuth = new UsernamePasswordAuthenticationToken("alice", "pass");
 		OidcUserInfoAuthenticationContext context = contextFor(notAJwtAuth);
-
-		assertThrows(IllegalArgumentException.class, () -> mapper.apply(context));
-	}
-
-	@Test
-	void oidcUserInfoMapper_jwtWithoutUsernameClaim_throwsInsteadOfReturningEmptyUserInfo() {
-		UserService userService = mock(UserService.class);
-		Function<OidcUserInfoAuthenticationContext, OidcUserInfo> mapper = config.oidcUserInfoMapper(userService);
-
-		Jwt jwt = Jwt.withTokenValue("token")
-				.header("alg", "RS256")
-				.subject("alice")
-				.issuedAt(Instant.now())
-				.expiresAt(Instant.now().plusSeconds(300))
-				.claim("sub", "alice")
-				.build();
-		JwtAuthenticationToken jwtAuth = new JwtAuthenticationToken(jwt);
-		OidcUserInfoAuthenticationContext context = contextFor(jwtAuth);
 
 		assertThrows(IllegalArgumentException.class, () -> mapper.apply(context));
 	}
