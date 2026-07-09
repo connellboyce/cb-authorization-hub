@@ -110,6 +110,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <!-- Pure Spring Boot bootstrap with no behavior of its own beyond
+                         delegating to SpringApplication.run(), nothing to assert on. -->
+                    <excludes>
+                        <exclude>**/AuthHubApplication.class</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>pl.project13.maven</groupId>

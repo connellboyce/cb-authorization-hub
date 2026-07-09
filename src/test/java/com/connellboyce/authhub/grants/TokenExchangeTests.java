@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -24,7 +25,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,6 +77,7 @@ public class TokenExchangeTests {
 				.clientId(TEST_CLIENT_ID)
 				.clientSecret("test")
 				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
 				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
 				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
 				.authorizationGrantType(AuthorizationGrantType.TOKEN_EXCHANGE)
@@ -244,6 +248,100 @@ public class TokenExchangeTests {
 				.andExpect(jsonPath("$.error_description").value("OAuth 2.0 Token Exchange parameter: requested_token_type"))
 				.andExpect(jsonPath("$.error").value("unsupported_token_type"))
 				.andExpect(jsonPath("$.error_uri").exists());
+	}
+
+	@Test
+	void testTokenExchange_basic_userDelegationByService_success() throws Exception {
+		String basicAuth = Base64.getEncoder()
+				.encodeToString((TEST_CLIENT_ID + ":" + TEST_CLIENT_SECRET).getBytes(StandardCharsets.UTF_8));
+
+		MvcResult mvcResult = mockMvc.perform(post(TOKEN_ENDPOINT)
+						.headers(new HttpHeaders() {{
+							add(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth);
+						}})
+						.param("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.param("subject_token", userLevelAccessToken)
+						.param("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.param("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.param("scope", TEST_SCOPE))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.access_token").exists())
+				.andExpect(jsonPath("$.token_type").value("Bearer"))
+				.andExpect(jsonPath("$.expires_in").isNumber())
+				.andReturn();
+
+		String tokenResult = mvcResult.getResponse().getContentAsString()
+				.replaceAll(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+		SignedJWT signedJWT = SignedJWT.parse(tokenResult);
+		Map<String, Object> claims = signedJWT.getPayload().toJSONObject();
+		assertEquals(TEST_USER_ID, claims.get("sub"), "Subject claim should match user ID from subject token");
+		assertEquals(TEST_CLIENT_ID, ((Map<String, Object>) claims.get("act")).get("sub"), "Actor claim should contain client ID of the exchanging client");
+	}
+
+	// --- Client authentication method enforcement ---
+
+	@Test
+	void testTokenExchange_basic_whenClientOnlyAllowsPost_shouldFail() throws Exception {
+		String postOnlyClientId = "post-only-exchange-client";
+		RegisteredClient postOnlyClient = RegisteredClient.withId(postOnlyClientId)
+				.clientId(postOnlyClientId)
+				.clientSecret("test")
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+				.authorizationGrantType(AuthorizationGrantType.TOKEN_EXCHANGE)
+				.scope(TEST_SCOPE)
+				.build();
+
+		when(registeredClientRepository.findByClientId(postOnlyClientId))
+				.thenReturn(postOnlyClient);
+
+		String basicAuth = Base64.getEncoder()
+				.encodeToString((postOnlyClientId + ":" + TEST_CLIENT_SECRET).getBytes(StandardCharsets.UTF_8));
+
+		mockMvc.perform(post(TOKEN_ENDPOINT)
+						.headers(new HttpHeaders() {{
+							add(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth);
+						}})
+						.param("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.param("subject_token", userLevelAccessToken)
+						.param("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.param("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.param("scope", TEST_SCOPE))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.access_token").doesNotExist())
+				.andExpect(jsonPath("$.error").value("invalid_client"));
+	}
+
+	// --- Client grant-type enforcement ---
+	// A client not registered for the token-exchange grant must be rejected, even
+	// with a valid subject token and correct credentials.
+
+	@Test
+	void testTokenExchange_clientWithoutGrantType_shouldFail() throws Exception {
+		String noExchangeGrantClientId = "no-exchange-grant-client";
+		RegisteredClient noExchangeGrantClient = RegisteredClient.withId(noExchangeGrantClientId)
+				.clientId(noExchangeGrantClientId)
+				.clientSecret("test")
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+				.redirectUri(TEST_REDIRECT_URI)
+				.scope(TEST_SCOPE)
+				.build();
+
+		when(registeredClientRepository.findByClientId(noExchangeGrantClientId))
+				.thenReturn(noExchangeGrantClient);
+
+		mockMvc.perform(post(TOKEN_ENDPOINT)
+						.param("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.param("subject_token", userLevelAccessToken)
+						.param("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.param("requested_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.param("scope", TEST_SCOPE)
+						.param("client_id", noExchangeGrantClientId)
+						.param("client_secret", TEST_CLIENT_SECRET))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.access_token").doesNotExist())
+				.andExpect(jsonPath("$.error").value("unauthorized_client"));
 	}
 
 	@Test

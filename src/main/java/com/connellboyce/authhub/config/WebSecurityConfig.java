@@ -1,7 +1,6 @@
 package com.connellboyce.authhub.config;
 
 import com.connellboyce.authhub.filter.AuthorizationRequestFilter;
-import com.connellboyce.authhub.grant.BasicCredentialsAuthenticationProvider;
 import com.connellboyce.authhub.grant.TokenExchangeAuthenticationProvider;
 import com.connellboyce.authhub.model.Actor;
 import com.connellboyce.authhub.model.ActorType;
@@ -89,8 +88,12 @@ public class WebSecurityConfig {
 								converters.add(new OAuth2TokenExchangeAuthenticationConverter())
 						)
 						.authenticationProviders(providers -> {
-									providers.add(0, new BasicCredentialsAuthenticationProvider(registeredClientRepository, passwordEncoder()));
-									providers.add(1, new TokenExchangeAuthenticationProvider(jwtDecoder(jwkSource), authorizationService, tokenGenerator, registeredClientRepository));
+									// This app's TokenExchangeAuthenticationProvider fully replaces Spring's
+									// default OAuth2TokenExchangeAuthenticationProvider (auto-registered by
+									// OAuth2TokenEndpointConfigurer) -- remove it so only the custom
+									// implementation ever handles token-exchange grants.
+									providers.removeIf(OAuth2TokenExchangeAuthenticationProvider.class::isInstance);
+									providers.add(0, new TokenExchangeAuthenticationProvider(jwtDecoder(jwkSource), authorizationService, tokenGenerator, registeredClientRepository));
 								}
 						)
 				);

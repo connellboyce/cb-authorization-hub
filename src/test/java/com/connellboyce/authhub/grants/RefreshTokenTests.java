@@ -207,4 +207,108 @@ public class RefreshTokenTests {
 				.andExpect(jsonPath("$.expires_in").exists())
 				.andExpect(jsonPath("$.refresh_token").exists());
 	}
+
+	// --- Client authentication method enforcement ---
+	// A client registered for only one of client_secret_basic/client_secret_post
+	// must be rejected when it attempts the other. See ClientCredentialsTests for
+	// the production defect (a misplaced custom AuthenticationProvider) that used
+	// to silently bypass this check for every grant type.
+
+	@Test
+	void testRefreshToken_basic_whenClientOnlyAllowsPost_shouldFail() throws Exception {
+		String postOnlyClientId = "post-only-refresh-client";
+		RegisteredClient postOnlyClient = RegisteredClient.withId(postOnlyClientId)
+				.clientId(postOnlyClientId)
+				.clientSecret("test")
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+				.scope("offline_access")
+				.build();
+
+		Mockito.when(registeredClientRepository.findByClientId(postOnlyClientId))
+				.thenReturn(postOnlyClient);
+
+		String basicAuth = Base64.getEncoder()
+				.encodeToString((postOnlyClientId + ":" + TEST_CLIENT_SECRET).getBytes(StandardCharsets.UTF_8));
+
+		mockMvc.perform(post(TOKEN_ENDPOINT)
+						.headers(new HttpHeaders() {{
+							add(HttpHeaders.AUTHORIZATION, "Basic " + basicAuth);
+						}})
+						.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+						.param("grant_type", "refresh_token")
+						.param("refresh_token", "invalid"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.access_token").doesNotExist())
+				.andExpect(jsonPath("$.error").value("invalid_client"));
+	}
+
+	@Test
+	void testRefreshToken_post_whenClientOnlyAllowsBasic_shouldFail() throws Exception {
+		String basicOnlyClientId = "basic-only-refresh-client";
+		RegisteredClient basicOnlyClient = RegisteredClient.withId(basicOnlyClientId)
+				.clientId(basicOnlyClientId)
+				.clientSecret("test")
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+				.scope("offline_access")
+				.build();
+
+		Mockito.when(registeredClientRepository.findByClientId(basicOnlyClientId))
+				.thenReturn(basicOnlyClient);
+
+		mockMvc.perform(post(TOKEN_ENDPOINT)
+						.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+						.param("grant_type", "refresh_token")
+						.param("client_id", basicOnlyClientId)
+						.param("client_secret", TEST_CLIENT_SECRET)
+						.param("refresh_token", "invalid"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.access_token").doesNotExist())
+				.andExpect(jsonPath("$.error").value("invalid_client"));
+	}
+
+	@Test
+	void testRefreshToken_clientMissingGrant_shouldFail() throws Exception {
+		String noRefreshGrantClientId = "no-refresh-grant-client";
+		RegisteredClient mockClient = RegisteredClient.withId(noRefreshGrantClientId)
+				.clientId(noRefreshGrantClientId)
+				.clientSecret("test")
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+				.clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+				.authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+				.scope("offline_access")
+				.build();
+
+		Mockito.when(registeredClientRepository.findByClientId(noRefreshGrantClientId))
+				.thenReturn(mockClient);
+
+		// The refresh token must resolve to a real authorization owned by this same
+		// client, otherwise the provider fails on the token/ownership check before it
+		// ever reaches the "does this client support refresh_token" check.
+		OAuth2RefreshToken refreshToken = new OAuth2RefreshToken(
+				"no-grant-refresh-token",
+				Instant.now().minusSeconds(60),
+				Instant.now().plusSeconds(600)
+		);
+
+		OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(mockClient)
+				.principalName("user")
+				.authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+				.token(refreshToken)
+				.build();
+
+		Mockito.when(authorizationService.findByToken("no-grant-refresh-token", OAuth2TokenType.REFRESH_TOKEN))
+				.thenReturn(authorization);
+
+		mockMvc.perform(post(TOKEN_ENDPOINT)
+						.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+						.param("grant_type", "refresh_token")
+						.param("client_id", noRefreshGrantClientId)
+						.param("client_secret", TEST_CLIENT_SECRET)
+						.param("refresh_token", "no-grant-refresh-token"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.access_token").doesNotExist())
+				.andExpect(jsonPath("$.error").value("unauthorized_client"));
+	}
 }

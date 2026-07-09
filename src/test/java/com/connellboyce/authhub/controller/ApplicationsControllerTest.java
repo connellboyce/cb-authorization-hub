@@ -213,6 +213,32 @@ class ApplicationsControllerTest {
     }
 
     @Test
+    void testUpdateApplication_authUtilServiceCannotResolveUser_flashesNotAuthenticated() {
+        // Ownership check passes (so @PreAuthorize allows the request through), but the
+        // separate AuthUtilService lookup used inside the method body fails -- these are
+        // independent reads of the same Authentication, so this is a real branch in the
+        // controller's own logic, not just a theoretical one.
+        when(applicationService.validateApplicationOwnership(any(Authentication.class), eq("1")))
+                .thenReturn(true);
+        when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
+                .thenReturn(Optional.empty());
+
+        try {
+            mockMvc.perform(put("/portal/operation/application")
+                            .with(csrf())
+                            .with(user("user123").roles("DEVELOPER"))
+                            .param("id", "1")
+                            .param("applicationName", "My App")
+                            .param("description", "Test description"))
+                    .andExpect(status().is(302))
+                    .andExpect(redirectedUrl("/portal/applications/1"))
+                    .andExpect(flash().attribute("error", "User not authenticated"));
+        } catch (Exception e) {
+            fail("Encountered exception when updating an application: " + e.getMessage());
+        }
+    }
+
+    @Test
     void testUpdateApplication_identityDoesNotOwnResource() {
         when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
                 .thenReturn(Optional.of("user123"));

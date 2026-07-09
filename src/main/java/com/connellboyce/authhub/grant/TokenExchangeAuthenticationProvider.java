@@ -96,9 +96,12 @@ public class TokenExchangeAuthenticationProvider implements AuthenticationProvid
 		if (!(clientPrincipal instanceof OAuth2ClientAuthenticationToken clientAuth) || !clientAuth.isAuthenticated()) {
 			throw new OAuth2AuthenticationException("Invalid client authentication");
 		}
+		if (!registeredClient.getAuthorizationGrantTypes().contains(AuthorizationGrantType.TOKEN_EXCHANGE)) {
+			throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
+		}
 
 		DefaultOAuth2TokenContext.Builder builder = DefaultOAuth2TokenContext.builder()
-				.authorizationGrantType(new AuthorizationGrantType("urn:ietf:params:oauth:grant-type:token-exchange"))
+				.authorizationGrantType(AuthorizationGrantType.TOKEN_EXCHANGE)
 				.principal(authentication)
 				.registeredClient(registeredClient)
 				.tokenType(OAuth2TokenType.ACCESS_TOKEN)
@@ -115,7 +118,7 @@ public class TokenExchangeAuthenticationProvider implements AuthenticationProvid
 
 		OAuth2Authorization authorization = OAuth2Authorization.withRegisteredClient(registeredClient)
 				.principalName(jwt.getSubject())
-				.authorizationGrantType(new AuthorizationGrantType("urn:ietf:params:oauth:grant-type:token-exchange"))
+				.authorizationGrantType(AuthorizationGrantType.TOKEN_EXCHANGE)
 				.token(accessToken)
 				.build();
 
@@ -134,6 +137,10 @@ public class TokenExchangeAuthenticationProvider implements AuthenticationProvid
 	}
 
 	private OAuth2AccessToken toAccessToken(OAuth2Token token, OAuth2TokenContext tokenContext) {
+		if (token == null) {
+			return null;
+		}
+
 		if (token instanceof OAuth2AccessToken accessToken) {
 			return accessToken;
 		}

@@ -113,6 +113,28 @@ class ScopesControllerTest {
 	}
 
 	@Test
+	void testCreateScope_serviceReturnsNull_flashesFailure() {
+		when(scopeService.createScope("urn:cb:scope:test", "1"))
+				.thenReturn(null);
+
+		when(applicationService.validateApplicationOwnership(any(Authentication.class), eq("1")))
+				.thenReturn(true);
+
+		try {
+			mockMvc.perform(post("/portal/operation/scope")
+							.with(csrf())
+							.with(user("user123").roles("DEVELOPER"))
+							.param("name", "urn:cb:scope:test")
+							.param("applicationId", "1"))
+					.andExpect(status().is(302))
+					.andExpect(redirectedUrl("/portal/applications/1"))
+					.andExpect(flash().attribute("error", "Scope creation failed"));
+		} catch (Exception e) {
+			fail("Encountered exception when creating a scope: " + e.getMessage());
+		}
+	}
+
+	@Test
 	void testCreateScope_identityDoesNotOwnResource() {
 		Scope scope = new Scope("0", "urn:cb:scope:test", "1");
 		when(scopeService.createScope("urn:cb:scope:test", "1"))
