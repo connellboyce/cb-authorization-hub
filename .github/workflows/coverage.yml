@@ -22,24 +22,22 @@ jobs:
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: jacoco-report
           path: target/site/jacoco/
 
-      - name: Check code coverage threshold
+      - name: Report code coverage
+        if: always()
         run: |
-          COVERAGE=$(awk -F 'covered="' '/<counter type="LINE"/ {print $2}' target/site/jacoco/jacoco.xml | awk -F '"' '{print $1}')
-          TOTAL=$(awk -F 'missed="' '/<counter type="LINE"/ {print $2}' target/site/jacoco/jacoco.xml | awk -F '"' '{print $1}')
-          
-          if [ -z "$COVERAGE" ] || [ -z "$TOTAL" ]; then
-          echo "Failed to parse JaCoCo report"
-          exit 1
+          LINE_COUNTER=$(grep -oE '<counter type="LINE" missed="[0-9]+" covered="[0-9]+"/>' target/site/jacoco/jacoco.xml | tail -1)
+          COVERED=$(echo "$LINE_COUNTER" | grep -oE 'covered="[0-9]+"' | grep -oE '[0-9]+')
+          MISSED=$(echo "$LINE_COUNTER" | grep -oE 'missed="[0-9]+"' | grep -oE '[0-9]+')
+
+          if [ -z "$COVERED" ] || [ -z "$MISSED" ]; then
+            echo "Failed to parse JaCoCo report"
+            exit 1
           fi
-          
-          PERCENT=$(echo "scale=2; $COVERAGE / ($COVERAGE + $TOTAL) * 100" | bc)
-          echo "Code coverage is $PERCENT%"
-          
-          if (( $(echo "$PERCENT < 80" | bc -l) )); then
-          echo "Code coverage ($PERCENT%) is below required threshold (80%)"
-          exit 1
-          fi
+
+          PERCENT=$(echo "scale=2; $COVERED / ($COVERED + $MISSED) * 100" | bc)
+          echo "Line coverage is $PERCENT% (required: 90%)"
