@@ -138,6 +138,30 @@ class ClientsControllerTest {
     }
 
     @Test
+    void testCreateClient_authUtilServiceCannotResolveUser_flashesNotAuthenticated() {
+        // Authenticated at the filter level (so the request reaches the controller),
+        // but AuthUtilService itself fails to resolve a user ID from the Authentication.
+        when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
+                .thenReturn(Optional.empty());
+
+        try {
+            mockMvc.perform(post("/portal/operation/client")
+                            .with(csrf())
+                            .with(user("user123").roles("DEVELOPER"))
+                            .param("clientId", "client")
+                            .param("clientSecret", "secret")
+                            .param("grantTypes", "authorization_code")
+                            .param("redirectUrls", "http://localhost:8080/callback")
+                            .param("scopes", "openid"))
+                    .andExpect(status().is(302))
+                    .andExpect(redirectedUrl("/portal/clients"))
+                    .andExpect(flash().attribute("error", "User not authenticated"));
+        } catch (Exception e) {
+            fail("Encountered exception when creating a client: " + e.getMessage());
+        }
+    }
+
+    @Test
     void testCreateClient_failure() {
         when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
                 .thenReturn(Optional.of("user123"));
@@ -265,6 +289,31 @@ class ClientsControllerTest {
                     .andExpect(status().is(401));
         } catch (Exception e) {
             fail("Encountered exception when creating an application: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testUpdateClient_authUtilServiceCannotResolveUser_flashesNotAuthenticated() {
+        // Ownership check passes (so @PreAuthorize allows the request through), but the
+        // separate AuthUtilService lookup used inside the method body fails.
+        when(clientService.validateClientOwnership(any(Authentication.class), eq("client")))
+                .thenReturn(true);
+        when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
+                .thenReturn(Optional.empty());
+
+        try {
+            mockMvc.perform(put("/portal/operation/client")
+                            .with(csrf())
+                            .with(user("user123").roles("DEVELOPER"))
+                            .param("clientId", "client")
+                            .param("grantTypes", "authorization_code")
+                            .param("redirectUrls", "http://localhost:8080/callback")
+                            .param("scopes", "openid"))
+                    .andExpect(status().is(302))
+                    .andExpect(redirectedUrl("/portal/clients"))
+                    .andExpect(flash().attribute("error", "User not authenticated"));
+        } catch (Exception e) {
+            fail("Encountered exception when updating a client: " + e.getMessage());
         }
     }
 

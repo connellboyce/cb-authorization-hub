@@ -59,6 +59,15 @@ class PageControllerTest {
 	}
 
 	@Test
+	void testLoginPage_noPreservedParams_noClientAttribute() throws Exception {
+		mockMvc.perform(get("/login"))
+				.andExpect(status().isOk())
+				.andExpect(model().attributeDoesNotExist("client_id"))
+				.andExpect(model().attributeDoesNotExist("client"))
+				.andExpect(view().name("login"));
+	}
+
+	@Test
 	void testRegisterPage() throws Exception {
 		mockMvc.perform(get("/register"))
 				.andExpect(status().isOk())
@@ -319,6 +328,70 @@ class PageControllerTest {
 	@Test
 	void testEditApplicationPage_insufficientRole() throws Exception {
 		mockMvc.perform(get("/portal/applications/1")
+						.with(user("testuser").roles("USER")))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void testEditClientPage_authenticated_oneApplication_multipleScopes() throws Exception {
+		MongoRegisteredClient client = new MongoRegisteredClient();
+		client.setClientId("client-1");
+		client.setAuthorizationGrantTypes(Set.of());
+		client.setScopes(Set.of());
+
+		Scope scope1 = new Scope("1", "urn:cb:scope:test", "1");
+		Scope scope2 = new Scope("2", "urn:cb:scope:test", "1");
+		Application app = new Application("1", "App One", "A test application", "owner1");
+
+		when(clientService.getClientByClientId("client-1")).thenReturn(client);
+		when(scopeService.getAllScopes()).thenReturn(List.of(scope1, scope2));
+		when(applicationService.getApplicationById("1")).thenReturn(app);
+
+		mockMvc.perform(get("/portal/clients/client-1")
+						.with(user("testuser").roles("DEVELOPER")))
+				.andExpect(status().isOk())
+				.andExpect(model().attribute("client", client))
+				.andExpect(model().attributeExists("grantTypes"))
+				.andExpect(model().attribute("scopesByApplication", aMapWithSize(1)))
+				.andExpect(model().attribute("scopesByApplication", hasEntry(equalTo("App One"), hasItems(scope1, scope2))))
+				.andExpect(view().name("portal/edit-client"));
+	}
+
+	@Test
+	void testEditClientPage_authenticated_multipleApplications() throws Exception {
+		MongoRegisteredClient client = new MongoRegisteredClient();
+		client.setClientId("client-1");
+		client.setAuthorizationGrantTypes(Set.of());
+		client.setScopes(Set.of());
+
+		Scope scope1 = new Scope("1", "urn:cb:scope:test", "1");
+		Scope scope2 = new Scope("2", "urn:cb:scope:test", "2");
+		Application app1 = new Application("1", "App One", "A test application", "owner1");
+		Application app2 = new Application("2", "App Two", "A test application", "owner1");
+
+		when(clientService.getClientByClientId("client-1")).thenReturn(client);
+		when(scopeService.getAllScopes()).thenReturn(List.of(scope1, scope2));
+		when(applicationService.getApplicationById("1")).thenReturn(app1);
+		when(applicationService.getApplicationById("2")).thenReturn(app2);
+
+		mockMvc.perform(get("/portal/clients/client-1")
+						.with(user("testuser").roles("DEVELOPER")))
+				.andExpect(status().isOk())
+				.andExpect(model().attribute("scopesByApplication", aMapWithSize(2)))
+				.andExpect(model().attribute("scopesByApplication", hasEntry(equalTo("App One"), hasItem(scope1))))
+				.andExpect(model().attribute("scopesByApplication", hasEntry(equalTo("App Two"), hasItem(scope2))))
+				.andExpect(view().name("portal/edit-client"));
+	}
+
+	@Test
+	void testEditClientPage_unauthenticated() throws Exception {
+		mockMvc.perform(get("/portal/clients/client-1"))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void testEditClientPage_insufficientRole() throws Exception {
+		mockMvc.perform(get("/portal/clients/client-1")
 						.with(user("testuser").roles("USER")))
 				.andExpect(status().isForbidden());
 	}
