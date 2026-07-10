@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
 <head>
-    <title>Create Client</title>
+    <title th:text="#{client.create.title}">Create Client</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -10,22 +10,22 @@
     <h2 class="text-white font-bold text-3xl lg:text-xl text-center">connell<span class="text-[#f9004d]">boyce</span>.com</h2>
     <h1 class="text-white font-bold text-5xl lg:text-3xl mb-4 text-center">developer<span class="text-[#f9004d]">hub</span></h1>
     <hr>
-    <h1 class="text-white font-bold text-5xl my-4 text-center">create a <span class="text-[#f9004d]">client</span></h1>
+    <h1 class="text-white font-bold text-5xl my-4 text-center" th:inline="text">[[#{client.create.heading.prefix}]] <span class="text-[#f9004d]" th:text="#{client.create.heading.highlight}">client</span></h1>
     <div class="rounded-xl bg-neutral-900 p-8 lg:mx-auto mt-8 mx-16">
         <form th:action="@{/portal/operation/client}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <div class="pb-4">
-                <label for="clientId" class="text-white text-4xl lg:text-2xl block">Client ID</label>
-                <input type="text" id="clientId" name="clientId" placeholder="my-client" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-1/2"/>
+                <label for="clientId" class="text-white text-4xl lg:text-2xl block" th:text="#{client.field.clientId}">Client ID</label>
+                <input type="text" id="clientId" name="clientId" th:placeholder="#{client.field.clientId.placeholder}" placeholder="my-client" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-1/2"/>
             </div>
             <div class="pb-4">
-                <label for="clientSecret" class="text-white text-4xl lg:text-2xl block">Client Secret</label>
+                <label for="clientSecret" class="text-white text-4xl lg:text-2xl block" th:text="#{client.field.clientSecret}">Client Secret</label>
                 <input type="text" id="clientSecret" name="clientSecret" th:value="${generatedSecret}" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl w-1/2" readonly/>
-                <p class="text-white text-md">Be sure to copy this! You won't be able to access it later.</p>
+                <p class="text-white text-md" th:text="#{client.create.secretWarning}">Be sure to copy this! You won't be able to access it later.</p>
             </div>
             <div class="border border-[#f9004d] rounded-lg border-rounded-lg my-4 text-white">
                 <div class="p-2">
-                    <p class="text-lg">Grant Types</p>
+                    <p class="text-lg" th:text="#{client.field.grantTypes}">Grant Types</p>
                     <th:block th:each="grant : ${grantTypes}">
                         <input type="checkbox" th:id="${grant.key}" name="grantTypes" th:value="${grant.key}">
                         <label th:for="${grant.key}" th:text="${grant.value}"></label><br>
@@ -34,20 +34,22 @@
             </div>
             <div class="border border-[#f9004d] rounded-lg border-rounded-lg my-4 text-white pb-4">
                 <div class="p-2">
-                    <p class="text-lg mb-2">Redirect URIs</p>
+                    <p class="text-lg mb-2" th:text="#{client.field.redirectUris}">Redirect URIs</p>
                     <div id="redirect-urls">
                         <div class="flex items-center mb-2 space-x-2">
-                            <input type="text" name="redirectUrls" class="redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2 text-black" placeholder="https://example.com/callback">
+                            <input type="text" name="redirectUrls" class="redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2 text-black" th:placeholder="#{client.field.redirectUri.placeholder}" placeholder="https://example.com/callback">
                             <button type="button"
                                     onclick="removeRedirectUrlInput(this)"
-                                    class="bg-red-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-red-800 transition">
+                                    class="bg-red-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-red-800 transition"
+                                    th:text="#{common.action.delete}">
                                 Delete
                             </button>
                         </div>
                     </div>
                     <button type="button"
                             onclick="addRedirectUrlInput()"
-                            class="bg-white text-black font-bold px-4 py-1 rounded-lg hover:bg-[#f9004d] hover:text-white transition">
+                            class="bg-white text-black font-bold px-4 py-1 rounded-lg hover:bg-[#f9004d] hover:text-white transition"
+                            th:text="#{common.action.add}">
                         Add
                     </button>
                 </div>
@@ -67,12 +69,13 @@
             </div>
             <input class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4"
                    type="submit"
+                   th:value="#{common.action.create}"
                    value="Create" />
         </form>
     </div>
 </div>
 </body>
-<script>
+<script th:inline="javascript">
     function addRedirectUrlInput() {
         const container = document.getElementById("redirect-urls");
         const wrapper = document.createElement("div");
@@ -81,13 +84,13 @@
         const input = document.createElement("input");
         input.type = "text";
         input.name = "redirectUrls";
-        input.placeholder = "https://example.com/callback";
+        input.placeholder = /*[[#{client.field.redirectUri.placeholder}]]*/ "https://example.com/callback";
         input.className = "redirect-url-input h-12 rounded-lg text-xl w-full lg:w-1/2 text-black";
 
         const button = document.createElement("button");
         button.type = "button";
         button.className = "bg-red-600 text-white font-bold px-3 py-1 rounded-lg hover:bg-red-800 transition text-black";
-        button.textContent = "Delete";
+        button.textContent = /*[[#{common.action.delete}]]*/ "Delete";
         button.onclick = function () {
             removeRedirectUrlInput(button);
         };

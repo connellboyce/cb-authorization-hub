@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
 <head>
-    <title>Please Log In</title>
+    <title th:text="#{login.title}">Please Log In</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -11,7 +11,7 @@
         <div th:case="true" class="lg:w-1/3 mx-auto lg:mx-0 mb-4">
             <img th:src="@{/images/partner-app-logos/{client_id}.png(client_id=${client.getClientId()})}"/>
             <div class="flex gap-6 italic justify-center">
-                <p class="text-white text-5xl lg:text-3xl">a partner of</p>
+                <p class="text-white text-5xl lg:text-3xl" th:text="#{login.partner.prefix}">a partner of</p>
                 <p class="text-white font-bold text-5xl lg:text-3xl">connell<span class="text-[#f9004d]">boyce</span>.com</p>
             </div>
         </div>
@@ -19,26 +19,27 @@
     </th:block>
 
     <div class="bg-neutral-900 px-12 py-16 lg:py-8 rounded-lg w-fit">
-        <h2 class="text-white text-6xl lg:text-4xl font-semibold mb-16 lg:mb-8">please log in</h2>
+        <h2 class="text-white text-6xl lg:text-4xl font-semibold mb-16 lg:mb-8" th:text="#{login.heading}">please log in</h2>
         <form  class="login-form" th:action="@{/login}" method="post">
             <div>
-                <input type="text" name="username" placeholder="Username" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl"/>
+                <input type="text" name="username" th:placeholder="#{common.placeholder.username}" placeholder="Username" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl"/>
             </div>
             <div>
-                <input type="password" name="password" placeholder="Password" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl"/>
+                <input type="password" name="password" th:placeholder="#{common.placeholder.password}" placeholder="Password" class="h-16 rounded-lg my-2 text-4xl lg:text-2xl"/>
             </div>
             <div class="error" th:if="${param.error}">
-                <p class="text-red-400 text-xl lg:text-lg">Invalid username or password.</p>
+                <p class="text-red-400 text-xl lg:text-lg" th:text="#{login.error.invalidCredentials}">Invalid username or password.</p>
             </div>
             <div class="error" th:if="${param.logout}">
-                <p class="text-red-400 text-xl lg:text-lg">You have been logged out.</p>
+                <p class="text-red-400 text-xl lg:text-lg" th:text="#{login.error.loggedOut}">You have been logged out.</p>
             </div>
-            <p class="text-3xl lg:text-xl text-white my-8 lg:my-4">By signing in, you agree to the <a href="#" class="underline w-full max-w-1/3">connellboyce.com terms of service</a>.</p>
+            <p class="text-3xl lg:text-xl text-white my-8 lg:my-4" th:inline="text">[[#{login.terms.prefix}]] <a href="#" class="underline w-full max-w-1/3" th:text="#{common.termsOfService.linkText}">connellboyce.com terms of service</a>.</p>
             <input class="bg-[#f9004d] border-4 font-bold hover:bg-black border-[#f9004d] py-2 px-4 rounded-xl text-white cursor-pointer text-5xl lg:text-3xl mt-8 lg:mt-4"
                    type="submit"
+                   th:value="#{login.submit}"
                    value="Log In" />
         </form>
-        <p class="text-3xl lg:text-xl text-white my-8 lg:my-4">Don't have an account? <a href="/register" class="underline">Create one now</a></p>
+        <p class="text-3xl lg:text-xl text-white my-8 lg:my-4" th:inline="text">[[#{login.noAccount.prefix}]] <a href="/register" class="underline" th:text="#{login.noAccount.linkText}">Create one now</a></p>
     </div>
 </div>
 </body>
