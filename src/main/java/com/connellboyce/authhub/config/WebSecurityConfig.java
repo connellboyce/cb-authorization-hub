@@ -19,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -110,17 +109,27 @@ public class WebSecurityConfig {
 
 	@Bean
 	@Order(2)
-	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
+	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+				.securityMatcher("/api/v1/**", "/portal/operation/**")
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers("/api/v1/user").permitAll()
+						.requestMatchers("/portal/operation/**").hasRole("DEVELOPER")
+						.anyRequest().authenticated())
+				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/user"));
+		return http.build();
+	}
+
+	@Bean
+	@Order(3)
+	SecurityFilterChain uiSecurityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
 			throws Exception {
 		http
-				.authorizeHttpRequests((authorize) -> authorize
-						.requestMatchers("/error").permitAll()
-						.requestMatchers("/api/v1/user").permitAll()
-						.requestMatchers("/register").permitAll()
-						.requestMatchers("/login").permitAll()
-						.requestMatchers("/portal/**").hasRole("DEVELOPER")
-						.requestMatchers("/portal").hasRole("DEVELOPER")
-						.anyRequest().authenticated())
+				.securityMatcher("/portal/**", "/portal", "/login", "/register")
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers("/login", "/register").permitAll()
+						.requestMatchers("/portal/**", "/portal").hasRole("DEVELOPER"))
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
 				.userDetailsService(userDetailsService)
 				.formLogin(formLogin -> formLogin
@@ -131,20 +140,22 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	WebSecurityCustomizer webSecurityCustomizer() {
-		return (web) -> web.debug(false)
-				.ignoring()
-				.requestMatchers(
-						"/webjars/**",
-						"/images/**",
-						"/css/**",
-						"/assets/**",
-						"/favicon.ico",
-						"/.well-known/robots.txt",
-						"/.well-known/humans.txt",
-						"/actuator/**",
-						"/api/v1/user"
-				);
+	@Order(4)
+	SecurityFilterChain publicResourcesSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers(
+								"/error",
+								"/actuator/**",
+								"/.well-known/**",
+								"/webjars/**",
+								"/images/**",
+								"/css/**",
+								"/assets/**",
+								"/favicon.ico"
+						).permitAll()
+						.anyRequest().denyAll());
+		return http.build();
 	}
 
 	@Bean
