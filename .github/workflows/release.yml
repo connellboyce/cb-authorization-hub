@@ -67,14 +67,14 @@ jobs:
 
     steps:
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ needs.prepare-release.outputs.release_version }}
-          name: Release v${{ needs.prepare-release.outputs.release_version }}
-          generate_release_notes: true
-          previous_tag: ${{ needs.prepare-release.outputs.previous_release_tag }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v${{ needs.prepare-release.outputs.release_version }} \
+            --repo ${{ github.repository }} \
+            --title "Release v${{ needs.prepare-release.outputs.release_version }}" \
+            --generate-notes \
+            ${{ needs.prepare-release.outputs.previous_release_tag && format('--notes-start-tag {0}', needs.prepare-release.outputs.previous_release_tag) || '' }}
 
   build-and-push-docker:
     needs: [prepare-release, github-release]
