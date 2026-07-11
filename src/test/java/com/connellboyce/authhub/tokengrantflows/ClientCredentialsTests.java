@@ -1,5 +1,6 @@
 package com.connellboyce.authhub.tokengrantflows;
 
+import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,11 +18,16 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Map;
+import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -106,6 +112,36 @@ public class ClientCredentialsTests {
 					.andExpect(jsonPath("$.refresh_token").doesNotExist())
 					.andExpect(jsonPath("$.token_type").value("Bearer"))
 					.andExpect(jsonPath("$.expires_in").isNumber());
+		} catch (Exception e) {
+			fail("Exception during test execution: " + e.getMessage());
+		}
+	}
+
+	@Test
+	void testClientCredentials_scopeClaim_isSpaceDelimitedString() {
+		try {
+			MvcResult mvcResult = mockMvc.perform(post(TOKEN_ENDPOINT)
+							.contentType(MediaType.APPLICATION_FORM_URLENCODED)
+							.param("grant_type", "client_credentials")
+							.param("client_id", TEST_CLIENT_ID)
+							.param("client_secret", TEST_CLIENT_SECRET)
+							.param("scope", TEST_SCOPE + " " + OPENID_SCOPES))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.access_token").exists())
+					.andReturn();
+
+			String accessToken = mvcResult.getResponse().getContentAsString()
+					.replaceAll(".*\"access_token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+			SignedJWT signedJWT = SignedJWT.parse(accessToken);
+			Map<String, Object> claims = signedJWT.getPayload().toJSONObject();
+
+			Object scopeClaim = claims.get("scope");
+			assertInstanceOf(String.class, scopeClaim,
+					"Scope claim must be a space-delimited string per RFC 9068, not a JSON array");
+			assertEquals(Set.of(TEST_SCOPE, "openid", "profile", "offline_access"),
+					Set.of(((String) scopeClaim).split(" ")),
+					"Scope claim should contain all granted scopes");
 		} catch (Exception e) {
 			fail("Exception during test execution: " + e.getMessage());
 		}

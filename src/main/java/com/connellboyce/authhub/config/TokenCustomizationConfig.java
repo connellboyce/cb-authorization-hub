@@ -42,7 +42,7 @@ public class TokenCustomizationConfig {
 				Set<String> authorities = principal.getAuthorities().stream().map(GrantedAuthority::getAuthority)
 						.collect(Collectors.toSet());
 				context.getClaims().claim("role", authorities);
-				context.getClaims().claim("scope", context.getAuthorizedScopes());
+				context.getClaims().claim("scope", String.join(" ", context.getAuthorizedScopes()));
 				if (principal.getPrincipal() instanceof User user) {
 					context.getClaims().subject(userService.getCBUserByUsername(principal.getName()).getId());
 					context.getClaims().claim("username", user.getUsername());

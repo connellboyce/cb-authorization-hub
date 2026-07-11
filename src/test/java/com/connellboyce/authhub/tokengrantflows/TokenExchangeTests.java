@@ -115,7 +115,7 @@ public class TokenExchangeTests {
 		Map<String, Object> claims = signedJWT.getPayload().toJSONObject();
 		assertEquals(TEST_USER_ID, claims.get("sub"), "Subject claim should match user ID from subject token");
 		assertEquals(TEST_USERNAME, claims.get("username"), "Username claim should match username from subject token");
-		assertEquals(List.of(TEST_SCOPE), claims.get("scope"), "Scope claim should match requested scope");
+		assertEquals(TEST_SCOPE, claims.get("scope"), "Scope claim should match requested scope");
 		assertEquals(TEST_CLIENT_ID, ((Map<String, Object>)claims.get("act")).get("sub"), "Actor claim should contain client ID of the exchanging client");
 		assertEquals(ActorType.SERVICE.getValue(), ((Map<String, Object>)claims.get("act")).get("typ"), "Actor claim should be of service type");
 		assertNull((Map<String, Object>)((Map<?, ?>) claims.get("act")).get("act"), "There should be no further nesting in the actor claim");
@@ -144,7 +144,7 @@ public class TokenExchangeTests {
 		Map<String, Object> claims = signedJWT.getPayload().toJSONObject();
 		assertEquals(TEST_USER_ID, claims.get("sub"), "Subject claim should match user ID from subject token");
 		assertEquals(TEST_USERNAME, claims.get("username"), "Username claim should match username from subject token");
-		assertEquals(List.of(TEST_SCOPE), claims.get("scope"), "Scope claim should match requested scope");
+		assertEquals(TEST_SCOPE, claims.get("scope"), "Scope claim should match requested scope");
 		assertEquals(TEST_CLIENT_ID, ((Map<String, Object>)claims.get("act")).get("sub"), "Actor claim should contain client ID of the exchanging client");
 		assertEquals(ActorType.SERVICE.getValue(), ((Map<String, Object>)claims.get("act")).get("typ"), "Actor claim should be of service type");
 		assertNull((Map<String, Object>)((Map<?, ?>) claims.get("act")).get("act"), "There should be no further nesting in the actor claim");
@@ -170,7 +170,7 @@ public class TokenExchangeTests {
 		Map<String, Object> claims2 = signedJWT2.getPayload().toJSONObject();
 		assertEquals(TEST_USER_ID, claims2.get("sub"), "Subject claim should match user ID from subject token");
 		assertEquals(TEST_USERNAME, claims2.get("username"), "Username claim should match username from subject token");
-		assertEquals(List.of(TEST_SCOPE), claims2.get("scope"), "Scope claim should match requested scope");
+		assertEquals(TEST_SCOPE, claims2.get("scope"), "Scope claim should match requested scope");
 		Map<String, Object> act = (Map<String, Object>) claims2.get("act");
 		assertEquals(TEST_CLIENT_ID, act.get("sub"), "Actor claim should contain client ID of the exchanging client");
 		assertEquals(ActorType.SERVICE.getValue(), act.get("typ"), "Actor claim should be of service type");
@@ -203,7 +203,7 @@ public class TokenExchangeTests {
 		Map<String, Object> claims = signedJWT.getPayload().toJSONObject();
 		assertEquals(TEST_CLIENT_ID, claims.get("sub"), "Subject claim should match client ID from subject token");
 		assertNull(claims.get("username"), "Username claim should be null");
-		assertEquals(List.of(TEST_SCOPE), claims.get("scope"), "Scope claim should match requested scope");
+		assertEquals(TEST_SCOPE, claims.get("scope"), "Scope claim should match requested scope");
 		assertEquals(TEST_CLIENT_ID, ((Map<String, Object>)claims.get("act")).get("sub"), "Actor claim should contain client ID of the exchanging client");
 		assertEquals(ActorType.SERVICE.getValue(), ((Map<String, Object>)claims.get("act")).get("typ"), "Actor claim should be of service type");
 		assertNull((Map<String, Object>)((Map<?, ?>) claims.get("act")).get("act"), "There should be no further nesting in the actor claim");
