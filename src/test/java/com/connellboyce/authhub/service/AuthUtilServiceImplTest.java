@@ -73,6 +73,18 @@ class AuthUtilServiceImplTest {
 	}
 
 	@Test
+	void testGetUserIdFromAuthentication_userAuth_userMissing_returnsEmpty() {
+		UserDetails userDetails = mock(UserDetails.class);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userDetails.getUsername()).thenReturn("username");
+		when(userService.getCBUserByUsername("username")).thenReturn(null);
+
+		Optional<String> result = authUtilService.getUserIdFromAuthentication(authentication);
+
+		assertTrue(result.isEmpty());
+	}
+
+	@Test
 	void testGetUserIdFromAuthentication_unknownPrincipal_returnsEmpty() {
 		when(authentication.getPrincipal()).thenReturn("some-random-object");
 

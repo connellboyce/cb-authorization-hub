@@ -1,0 +1,31 @@
+meta {
+  name: Register Client
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/api/v1/clients
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}
+
+body:json {
+  {
+    "client_name": "Bruno Test Client",
+    "redirect_uris": ["http://localhost:2121"],
+    "grant_types": ["authorization_code", "refresh_token"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "client_secret_basic",
+    "scope": "{{management.scope-name}}"
+  }
+}
+
+script:post-response {
+  bru.setVar("management.client-id", res.body.client_id);
+}

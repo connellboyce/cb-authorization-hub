@@ -100,6 +100,21 @@ class ApplicationsControllerTest {
     }
 
     @Test
+    void testCreateApplication_anonymous_redirectsToLogin() {
+        try {
+            mockMvc.perform(post("/portal/operation/application")
+                            .with(csrf())
+                            .accept("text/html")
+                            .param("applicationName", "My App")
+                            .param("description", "Test description"))
+                    .andExpect(status().is3xxRedirection())
+                    .andExpect(redirectedUrlPattern("**/login"));
+        } catch (Exception e) {
+            fail("Encountered exception when creating an application: " + e.getMessage());
+        }
+    }
+
+    @Test
     void testCreateApplication_unauthenticated() {
         when(authUtilService.getUserIdFromAuthentication(any(Authentication.class)))
                 .thenReturn(Optional.empty());

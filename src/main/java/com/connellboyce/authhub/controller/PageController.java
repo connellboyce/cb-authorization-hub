@@ -15,9 +15,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.*;
+
+import static com.connellboyce.authhub.util.CredentialUtils.generateClientSecret;
 
 @Controller
 public class PageController {
@@ -84,7 +84,7 @@ public class PageController {
 
 	@GetMapping("/portal/clients/create")
 	public String createClientPage(Model model) {
-		model.addAttribute("generatedSecret", generateSecret());
+		model.addAttribute("generatedSecret", generateClientSecret());
 		model.addAttribute("grantTypes", Map.ofEntries(
 				Map.entry("authorization_code", "Authorization Code"),
 				Map.entry("client_credentials", "Client Credentials"),
@@ -134,14 +134,5 @@ public class PageController {
 		model.addAttribute("scopesByApplication", scopeMap);
 
 		return "portal/edit-client";
-	}
-
-	private String generateSecret() {
-		byte[] values = new byte[32];
-		SecureRandom random = new SecureRandom();
-		random.nextBytes(values);
-		return Base64.getUrlEncoder()
-				.withoutPadding()
-				.encodeToString(values);
 	}
 }

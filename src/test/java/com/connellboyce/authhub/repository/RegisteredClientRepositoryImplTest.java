@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
@@ -102,4 +103,46 @@ class RegisteredClientRepositoryImplTest {
 		assertFalse(result.getClientSettings().isRequireAuthorizationConsent());
 	}
 
+	@Test
+	void testFindByClientId_mapsRegistrationMetadata() {
+		Instant issuedAt = Instant.parse("2026-11-01T00:00:00Z");
+		MongoRegisteredClient mongoClient = new MongoRegisteredClient();
+		mongoClient.setId("existing-id");
+		mongoClient.setClientId("client-id-123");
+		mongoClient.setClientName("My App");
+		mongoClient.setClientIdIssuedAt(issuedAt);
+		mongoClient.setClientSecret("secret-xyz");
+		mongoClient.setScopes(Set.of("scope1"));
+		mongoClient.setRedirectUris(Set.of());
+		mongoClient.setClientAuthenticationMethods(Set.of("client_secret_basic"));
+		mongoClient.setAuthorizationGrantTypes(Set.of("client_credentials"));
+
+		when(mongoRegisteredClientRepository.findByClientId("client-id-123"))
+				.thenReturn(Optional.of(mongoClient));
+
+		RegisteredClient result = registeredClientRepository.findByClientId("client-id-123");
+		assertEquals("My App", result.getClientName());
+		assertEquals(issuedAt, result.getClientIdIssuedAt());
+		assertTrue(result.getRedirectUris().isEmpty());
+	}
+
+	@Test
+	void testFindByClientId_legacyDocumentWithoutRegistrationMetadata() {
+		MongoRegisteredClient mongoClient = new MongoRegisteredClient();
+		mongoClient.setId("existing-id");
+		mongoClient.setClientId("client-id-123");
+		mongoClient.setClientSecret("secret-xyz");
+		mongoClient.setScopes(Set.of("scope1"));
+		mongoClient.setRedirectUris(Set.of("https://example.com/callback"));
+		mongoClient.setClientAuthenticationMethods(Set.of("client_secret_basic", "client_secret_post"));
+		mongoClient.setAuthorizationGrantTypes(Set.of("authorization_code"));
+
+		when(mongoRegisteredClientRepository.findByClientId("client-id-123"))
+				.thenReturn(Optional.of(mongoClient));
+
+		RegisteredClient result = registeredClientRepository.findByClientId("client-id-123");
+		assertEquals("existing-id", result.getClientName());
+		assertNull(result.getClientIdIssuedAt());
+		assertEquals(2, result.getClientAuthenticationMethods().size());
+	}
 }

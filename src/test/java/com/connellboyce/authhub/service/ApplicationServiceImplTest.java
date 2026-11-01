@@ -2,7 +2,10 @@ package com.connellboyce.authhub.service;
 
 import com.connellboyce.authhub.model.dao.Application;
 import com.connellboyce.authhub.model.dao.CBUser;
+import com.connellboyce.authhub.exception.ResourceConflictException;
+import com.connellboyce.authhub.exception.ResourceNotFoundException;
 import com.connellboyce.authhub.repository.ApplicationRepository;
+import com.connellboyce.authhub.repository.ScopeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -11,6 +14,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,12 +32,18 @@ class ApplicationServiceImplTest {
 	@Mock
 	private UserService userService;
 
+	@Mock
+	private ScopeRepository scopeRepository;
+
 	@InjectMocks
 	private ApplicationServiceImpl applicationService;
 
 	@BeforeEach
 	void setup() {
 		MockitoAnnotations.openMocks(this);
+		AuthUtilServiceImpl authUtilService = new AuthUtilServiceImpl();
+		ReflectionTestUtils.setField(authUtilService, "userService", userService);
+		ReflectionTestUtils.setField(applicationService, "authUtilService", authUtilService);
 	}
 
 	@Test
@@ -220,5 +231,171 @@ class ApplicationServiceImplTest {
 		Authentication auth = mock(Authentication.class);
 		assertFalse(applicationService.validateApplicationOwnership(auth, null));
 		assertFalse(applicationService.validateApplicationOwnership(auth, ""));
+	}
+
+	@Test
+	void validateApplicationOwnership_jwtPrincipal_trueWhenSubMatchesOwner() {
+		Authentication auth = mock(Authentication.class);
+		when(auth.getPrincipal()).thenReturn(userJwt("owner123"));
+		when(applicationRepository.findById("app123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+
+		assertTrue(applicationService.validateApplicationOwnership(auth, "app123"));
+	}
+
+	@Test
+	void validateApplicationOwnership_jwtPrincipal_falseWhenSubDiffersFromOwner() {
+		Authentication auth = mock(Authentication.class);
+		when(auth.getPrincipal()).thenReturn(userJwt("someone-else"));
+		when(applicationRepository.findById("app123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+
+		assertFalse(applicationService.validateApplicationOwnership(auth, "app123"));
+	}
+
+	@Test
+	void validateApplicationOwnership_jwtPrincipal_falseForClientCredentialsToken() {
+		Authentication auth = mock(Authentication.class);
+		when(auth.getPrincipal()).thenReturn(Jwt.withTokenValue("token").header("alg", "none").subject("owner123").build());
+		when(applicationRepository.findById("app123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+
+		assertFalse(applicationService.validateApplicationOwnership(auth, "app123"));
+	}
+
+	private Jwt userJwt(String subject) {
+		return Jwt.withTokenValue("token").header("alg", "none").subject(subject).claim("username", "alice").build();
+	}
+
+	@Test
+	void getOwnedApplications_returnsOwnedOrEmpty() {
+		Application app = new Application("app123", "App", "Desc", "owner123");
+		when(applicationRepository.findByOwnerId("owner123")).thenReturn(Optional.of(List.of(app)));
+		when(applicationRepository.findByOwnerId("nobody")).thenReturn(Optional.empty());
+
+		assertEquals(List.of(app), applicationService.getOwnedApplications("owner123"));
+		assertEquals(List.of(), applicationService.getOwnedApplications("nobody"));
+	}
+
+	@Test
+	void getApplicationsByIds_delegatesToRepository() {
+		Application app = new Application("app123", "App", "Desc", "owner123");
+		when(applicationRepository.findAllById(List.of("app123"))).thenReturn(List.of(app));
+
+		assertEquals(List.of(app), applicationService.getApplicationsByIds(List.of("app123")));
+	}
+
+	@Test
+	void getOwnedApplication_foundForOwner() {
+		Application app = new Application("app123", "App", "Desc", "owner123");
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(app));
+
+		assertEquals(app, applicationService.getOwnedApplication("app123", "owner123"));
+	}
+
+	@Test
+	void getOwnedApplication_notOwned_throwsNotFound() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "intruder")).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class, () -> applicationService.getOwnedApplication("app123", "intruder"));
+	}
+
+	@Test
+	void createOwnedApplication_success() {
+		when(applicationRepository.findByName("App")).thenReturn(Optional.empty());
+		when(applicationRepository.save(any(Application.class))).thenAnswer(i -> i.getArgument(0));
+
+		Application created = applicationService.createOwnedApplication("App", "Desc", "owner123");
+
+		assertNotNull(created.getId());
+		assertEquals("App", created.getName());
+		assertEquals("Desc", created.getDescription());
+		assertEquals("owner123", created.getOwnerId());
+	}
+
+	@Test
+	void createOwnedApplication_blankFields_throwIllegalArgument() {
+		assertThrows(IllegalArgumentException.class, () -> applicationService.createOwnedApplication(" ", "Desc", "owner123"));
+		assertThrows(IllegalArgumentException.class, () -> applicationService.createOwnedApplication(null, "Desc", "owner123"));
+		assertThrows(IllegalArgumentException.class, () -> applicationService.createOwnedApplication("App", "", "owner123"));
+		assertThrows(IllegalArgumentException.class, () -> applicationService.createOwnedApplication("App", null, "owner123"));
+	}
+
+	@Test
+	void createOwnedApplication_duplicateName_throwsConflict() {
+		when(applicationRepository.findByName("App")).thenReturn(Optional.of(new Application("other", "App", "Desc", "someone")));
+
+		assertThrows(ResourceConflictException.class, () -> applicationService.createOwnedApplication("App", "Desc", "owner123"));
+		verify(applicationRepository, never()).save(any());
+	}
+
+	@Test
+	void updateOwnedApplication_success_keepsOwner() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(new Application("app123", "Old", "Old desc", "owner123")));
+		when(applicationRepository.findByName("New")).thenReturn(Optional.empty());
+		when(applicationRepository.save(any(Application.class))).thenAnswer(i -> i.getArgument(0));
+
+		Application updated = applicationService.updateOwnedApplication("app123", "New", "New desc", "owner123");
+
+		assertEquals("New", updated.getName());
+		assertEquals("New desc", updated.getDescription());
+		assertEquals("owner123", updated.getOwnerId());
+	}
+
+	@Test
+	void updateOwnedApplication_sameName_succeeds() {
+		Application app = new Application("app123", "App", "Old desc", "owner123");
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(app));
+		when(applicationRepository.findByName("App")).thenReturn(Optional.of(app));
+		when(applicationRepository.save(any(Application.class))).thenAnswer(i -> i.getArgument(0));
+
+		assertEquals("New desc", applicationService.updateOwnedApplication("app123", "App", "New desc", "owner123").getDescription());
+	}
+
+	@Test
+	void updateOwnedApplication_nameTakenByOther_throwsConflict() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+		when(applicationRepository.findByName("Taken")).thenReturn(Optional.of(new Application("other", "Taken", "Desc", "someone")));
+
+		assertThrows(ResourceConflictException.class, () -> applicationService.updateOwnedApplication("app123", "Taken", "Desc", "owner123"));
+		verify(applicationRepository, never()).save(any());
+	}
+
+	@Test
+	void updateOwnedApplication_notOwned_throwsNotFound() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "intruder")).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class, () -> applicationService.updateOwnedApplication("app123", "App", "Desc", "intruder"));
+	}
+
+	@Test
+	void updateOwnedApplication_blankName_throwsIllegalArgument() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+
+		assertThrows(IllegalArgumentException.class, () -> applicationService.updateOwnedApplication("app123", "", "Desc", "owner123"));
+	}
+
+	@Test
+	void deleteOwnedApplication_withoutScopes_deletes() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+		when(scopeRepository.existsByApplicationId("app123")).thenReturn(false);
+
+		applicationService.deleteOwnedApplication("app123", "owner123");
+
+		verify(applicationRepository).deleteById("app123");
+	}
+
+	@Test
+	void deleteOwnedApplication_withScopes_throwsConflict() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "owner123")).thenReturn(Optional.of(new Application("app123", "App", "Desc", "owner123")));
+		when(scopeRepository.existsByApplicationId("app123")).thenReturn(true);
+
+		assertThrows(ResourceConflictException.class, () -> applicationService.deleteOwnedApplication("app123", "owner123"));
+		verify(applicationRepository, never()).deleteById(any());
+	}
+
+	@Test
+	void deleteOwnedApplication_notOwned_throwsNotFound() {
+		when(applicationRepository.findByIdAndOwnerId("app123", "intruder")).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class, () -> applicationService.deleteOwnedApplication("app123", "intruder"));
+		verify(applicationRepository, never()).deleteById(any());
 	}
 }

@@ -6,8 +6,10 @@ import com.connellboyce.authhub.model.Actor;
 import com.connellboyce.authhub.model.ActorType;
 import com.connellboyce.authhub.repository.MongoRegisteredClientRepository;
 import com.connellboyce.authhub.repository.RegisteredClientRepositoryImpl;
+import com.connellboyce.authhub.repository.UserRepository;
 import com.connellboyce.authhub.service.UserDetailsServiceImpl;
 import com.connellboyce.authhub.service.UserService;
+import com.connellboyce.authhub.util.CBRole;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
@@ -17,8 +19,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -31,6 +39,8 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -40,12 +50,14 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.context.AuthorizationServerContextHolder;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcUserInfoAuthenticationContext;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.*;
 import org.springframework.security.oauth2.server.authorization.web.authentication.OAuth2TokenExchangeAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.filter.HiddenHttpMethodFilter;
@@ -62,9 +74,29 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class WebSecurityConfig {
+	private static final String ISSUER = "https://auth.connellboyce.com";
+	private static final String CLIENTS_PATH = "/api/v1/clients/**";
+	private static final String APPLICATIONS_PATH = "/api/v1/applications/**";
+	private static final String SCOPES_PATH = "/api/v1/scopes/**";
+	private static final String CLIENTS_READ = "SCOPE_urn:cb:scope:authhub:clients#read";
+	private static final String CLIENTS_WRITE = "SCOPE_urn:cb:scope:authhub:clients#write";
+	private static final String APPLICATIONS_READ = "SCOPE_urn:cb:scope:authhub:applications#read";
+	private static final String APPLICATIONS_WRITE = "SCOPE_urn:cb:scope:authhub:applications#write";
+	private static final String SCOPES_READ = "SCOPE_urn:cb:scope:authhub:scopes#read";
 
 	@Value("#{'${spring.security.login.entry-point.preserved-params}'.split(',')}")
 	Set<String> preservedParams;
+
+	private static String clientRegistrationEndpoint() {
+		return AuthorizationServerContextHolder.getContext().getIssuer() + "/api/v1/clients";
+	}
+
+	private static AuthorizationManager<RequestAuthorizationContext> developerWithScope(String scopeAuthority) {
+		return AuthorizationManagers.allOf(
+				AuthorityAuthorizationManager.hasRole(CBRole.ROLE_DEVELOPER.withoutPrefix()),
+				AuthorityAuthorizationManager.hasAuthority(scopeAuthority)
+		);
+	}
 
 	@Bean
 	@Order(1)
@@ -72,12 +104,18 @@ public class WebSecurityConfig {
 	                                                           Function<OidcUserInfoAuthenticationContext, OidcUserInfo> oidcUserInfoMapper,
 	                                                           OAuth2AuthorizationService authorizationService,
 	                                                           OAuth2TokenGenerator<?> tokenGenerator,
-	                                                           JWKSource<SecurityContext> jwkSource,
+	                                                           JwtDecoder jwtDecoder,
 	                                                           RegisteredClientRepository registeredClientRepository)
 			throws Exception {
 		OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 		http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+				.authorizationServerMetadataEndpoint(metadata -> metadata
+						.authorizationServerMetadataCustomizer(builder -> builder.clientRegistrationEndpoint(clientRegistrationEndpoint()))
+				)
 				.oidc((oidc) -> oidc
+						.providerConfigurationEndpoint(providerConfiguration -> providerConfiguration
+								.providerConfigurationCustomizer(builder -> builder.clientRegistrationEndpoint(clientRegistrationEndpoint()))
+						)
 						.userInfoEndpoint((userInfo) -> userInfo
 								.userInfoMapper(oidcUserInfoMapper)
 						)
@@ -88,7 +126,7 @@ public class WebSecurityConfig {
 						)
 						.authenticationProviders(providers -> {
 									providers.removeIf(OAuth2TokenExchangeAuthenticationProvider.class::isInstance);
-									providers.add(0, new TokenExchangeAuthenticationProvider(jwtDecoder(jwkSource), authorizationService, tokenGenerator, registeredClientRepository));
+									providers.add(0, new TokenExchangeAuthenticationProvider(jwtDecoder, authorizationService, tokenGenerator, registeredClientRepository));
 								}
 						)
 				);
@@ -109,12 +147,35 @@ public class WebSecurityConfig {
 
 	@Bean
 	@Order(2)
+	SecurityFilterChain managementApiSecurityFilterChain(HttpSecurity http, UserRepository userRepository) throws Exception {
+		http
+				.securityMatcher(CLIENTS_PATH, APPLICATIONS_PATH, SCOPES_PATH)
+				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers(HttpMethod.GET, CLIENTS_PATH).access(developerWithScope(CLIENTS_READ))
+						.requestMatchers(HttpMethod.POST, CLIENTS_PATH).access(developerWithScope(CLIENTS_WRITE))
+						.requestMatchers(HttpMethod.PUT, CLIENTS_PATH).access(developerWithScope(CLIENTS_WRITE))
+						.requestMatchers(HttpMethod.DELETE, CLIENTS_PATH).access(developerWithScope(CLIENTS_WRITE))
+						.requestMatchers(HttpMethod.GET, APPLICATIONS_PATH).access(developerWithScope(APPLICATIONS_READ))
+						.requestMatchers(HttpMethod.POST, APPLICATIONS_PATH).access(developerWithScope(APPLICATIONS_WRITE))
+						.requestMatchers(HttpMethod.PUT, APPLICATIONS_PATH).access(developerWithScope(APPLICATIONS_WRITE))
+						.requestMatchers(HttpMethod.DELETE, APPLICATIONS_PATH).access(developerWithScope(APPLICATIONS_WRITE))
+						.requestMatchers(HttpMethod.GET, SCOPES_PATH).access(developerWithScope(SCOPES_READ))
+						.anyRequest().denyAll())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.csrf(AbstractHttpConfigurer::disable)
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.jwt(jwt -> jwt
+								.jwtAuthenticationConverter(new ManagementJwtAuthenticationConverter(userRepository))));
+		return http.build();
+	}
+
+	@Bean
+	@Order(3)
 	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
 		http
-				.securityMatcher("/api/v1/**", "/portal/operation/**")
+				.securityMatcher("/api/v1/**")
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers("/api/v1/user").permitAll()
-						.requestMatchers("/portal/operation/**").hasRole("DEVELOPER")
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()))
 				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/user"));
@@ -122,7 +183,7 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	@Order(3)
+	@Order(4)
 	SecurityFilterChain uiSecurityFilterChain(HttpSecurity http, UserDetailsService userDetailsService)
 			throws Exception {
 		http
@@ -140,7 +201,7 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	@Order(4)
+	@Order(5)
 	SecurityFilterChain publicResourcesSecurityFilterChain(HttpSecurity http) throws Exception {
 		http
 				.authorizeHttpRequests(authorize -> authorize
@@ -187,13 +248,15 @@ public class WebSecurityConfig {
 	}
 
 	@Bean
-	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
-		return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+	public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource, AuthorizationServerSettings authorizationServerSettings) {
+		NimbusJwtDecoder jwtDecoder = (NimbusJwtDecoder) OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+		jwtDecoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(authorizationServerSettings.getIssuer()));
+		return jwtDecoder;
 	}
 
 	@Bean
 	public AuthorizationServerSettings authorizationServerSettings() {
-		return AuthorizationServerSettings.builder().build();
+		return AuthorizationServerSettings.builder().issuer(ISSUER).build();
 	}
 
 	@Bean

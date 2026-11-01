@@ -1,0 +1,16 @@
+meta {
+  name: Delete Scope
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{oauth.base-url}}/api/v1/applications/{{management.application-id}}/scopes/{{management.scope-id}}
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}

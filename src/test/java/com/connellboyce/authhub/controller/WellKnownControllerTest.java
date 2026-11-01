@@ -66,6 +66,7 @@ class WellKnownControllerTest {
 		try {
 			mockMvc.perform(get("/.well-known/oauth-authorization-server"))
 					.andExpect(status().is(200))
+					.andExpect(jsonPath("$.registration_endpoint").value("https://auth.connellboyce.com/api/v1/clients"))
 					.andExpect(jsonPath("$.authorization_endpoint").exists())
 					.andExpect(jsonPath("$.token_endpoint").exists())
 					.andExpect(jsonPath("$.token_endpoint_auth_methods_supported").exists())
@@ -86,6 +87,7 @@ class WellKnownControllerTest {
 		try {
 			mockMvc.perform(get("/.well-known/openid-configuration"))
 					.andExpect(status().is(200))
+					.andExpect(jsonPath("$.registration_endpoint").value("https://auth.connellboyce.com/api/v1/clients"))
 					.andExpect(jsonPath("$.authorization_endpoint").exists())
 					.andExpect(jsonPath("$.token_endpoint").exists())
 					.andExpect(jsonPath("$.token_endpoint_auth_methods_supported").exists())

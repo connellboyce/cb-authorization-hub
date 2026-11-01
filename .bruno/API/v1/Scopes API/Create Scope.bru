@@ -1,0 +1,27 @@
+meta {
+  name: Create Scope
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/api/v1/applications/{{management.application-id}}/scopes
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "urn:cb:scope:bruno:test#read"
+  }
+}
+
+script:post-response {
+  bru.setVar("management.scope-id", res.body.id);
+  bru.setVar("management.scope-name", res.body.name);
+}

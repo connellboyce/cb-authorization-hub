@@ -1,0 +1,16 @@
+meta {
+  name: List Applications
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{oauth.base-url}}/api/v1/applications
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}
