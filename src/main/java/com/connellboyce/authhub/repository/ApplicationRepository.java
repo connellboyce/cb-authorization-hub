@@ -9,5 +9,6 @@ import java.util.Optional;
 public interface ApplicationRepository extends MongoRepository<Application, String> {
 	Optional<Application> findByName(String name);
 	Optional<List<Application>> findByOwnerId(String ownerId);
+	Optional<Application> findByIdAndOwnerId(String id, String ownerId);
 	void deleteApplicationById(String id);
 }

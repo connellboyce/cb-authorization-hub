@@ -1,0 +1,23 @@
+meta {
+  name: Update Application
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{oauth.base-url}}/api/v1/applications/{{management.application-id}}
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno Test Application",
+    "description": "Updated from the Bruno collection"
+  }
+}

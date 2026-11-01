@@ -1,0 +1,16 @@
+meta {
+  name: Get Scope Catalog
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{oauth.base-url}}/api/v1/scopes
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}

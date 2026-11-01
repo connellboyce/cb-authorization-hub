@@ -1,0 +1,27 @@
+meta {
+  name: Create Application
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{oauth.base-url}}/api/v1/applications
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno Test Application",
+    "description": "Created from the Bruno collection"
+  }
+}
+
+script:post-response {
+  bru.setVar("management.application-id", res.body.id);
+}

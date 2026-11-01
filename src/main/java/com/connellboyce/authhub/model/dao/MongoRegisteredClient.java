@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.util.Set;
 
 @Getter
@@ -14,6 +15,8 @@ public class MongoRegisteredClient {
 	@Id
 	private String id;
 	private String clientId;
+	private String clientName;
+	private Instant clientIdIssuedAt;
 	private String clientSecret;
 	private Set<String> clientAuthenticationMethods;
 	private Set<String> authorizationGrantTypes;

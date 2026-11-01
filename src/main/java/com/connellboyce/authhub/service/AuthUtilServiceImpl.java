@@ -1,5 +1,6 @@
 package com.connellboyce.authhub.service;
 
+import com.connellboyce.authhub.model.dao.CBUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,8 +20,7 @@ public class AuthUtilServiceImpl implements AuthUtilService {
 		if (principal instanceof Jwt jwt) {
 			return jwt.getClaimAsString("username") != null ? Optional.ofNullable(jwt.getClaimAsString("sub")) : Optional.empty();
 		} else if (principal instanceof UserDetails user) {
-			String username = user.getUsername();
-			return Optional.of(userService.getCBUserByUsername(username).getId());
+			return Optional.ofNullable(userService.getCBUserByUsername(user.getUsername())).map(CBUser::getId);
 		} else {
 			return Optional.empty();
 		}

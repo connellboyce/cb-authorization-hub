@@ -36,6 +36,8 @@ public class RegisteredClientRepositoryImpl implements RegisteredClientRepositor
 	private RegisteredClient toRegisteredClient(MongoRegisteredClient mongoClient) {
 		return RegisteredClient.withId(mongoClient.getId())
 				.clientId(mongoClient.getClientId())
+				.clientName(mongoClient.getClientName())
+				.clientIdIssuedAt(mongoClient.getClientIdIssuedAt())
 				.clientSecret(mongoClient.getClientSecret())
 				.clientAuthenticationMethods(authMethods ->
 						mongoClient.getClientAuthenticationMethods().forEach(authMethod ->

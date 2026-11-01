@@ -1,0 +1,28 @@
+meta {
+  name: Update Client
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{oauth.base-url}}/api/v1/clients/{{management.client-id}}
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{management.access-token}}
+  Accept: application/json
+}
+
+body:json {
+  {
+    "client_id": "{{management.client-id}}",
+    "client_name": "Bruno Test Client",
+    "redirect_uris": ["http://localhost:2121"],
+    "grant_types": ["authorization_code", "refresh_token"],
+    "response_types": ["code"],
+    "token_endpoint_auth_method": "client_secret_basic",
+    "scope": ""
+  }
+}
